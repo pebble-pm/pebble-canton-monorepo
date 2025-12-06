@@ -2,6 +2,8 @@
 
 **A decentralized prediction market platform built on Canton blockchain**
 
+<img width="2300" height="1440" alt="image" src="https://github.com/user-attachments/assets/a0208463-e2bb-40cb-b62b-1595fc2c9b8a" />
+
 ## What is Pebble?
 
 Pebble enables users to trade binary YES/NO predictions on real-world events-sports, politics, finance, crypto, and more. Think Polymarket or Kalshi, but with Canton's privacy-first architecture and bulletproof settlement guarantees.
