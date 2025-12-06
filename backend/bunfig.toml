@@ -1,0 +1,18 @@
+# Bun test configuration for Pebble backend
+# https://bun.sh/docs/runtime/bunfig
+
+[test]
+# Preload test setup before running tests
+preload = ["./tests/setup/index.ts"]
+
+# Enable coverage reporting
+coverage = true
+
+# Test timeout in milliseconds (30 seconds)
+timeout = 30000
+
+# Run tests in parallel
+smol = true
+
+# Coverage configuration
+coverageSkipTestFiles = true

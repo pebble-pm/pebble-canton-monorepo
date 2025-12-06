@@ -1,0 +1,188 @@
+-- | Trading account management for Pebble Prediction Market
+--
+-- TRUST MODEL & USER CONSENT:
+-- This module uses a dual-signatory pattern where both the user (owner)
+-- and pebbleAdmin are signatories. This grants pebbleAdmin the authority
+-- to exercise choices (LockFunds, UnlockFunds, etc.) without per-operation
+-- user consent, similar to how centralized exchanges operate.
+--
+-- USER CONSENT IS OBTAINED IMPLICITLY when:
+-- 1. User creates TradingAccountRequest (user initiates)
+-- 2. pebbleAdmin accepts, creating TradingAccount with both as signatories
+--
+-- By accepting account creation, users agree that pebbleAdmin can:
+-- - Lock/unlock funds for order management
+-- - Debit locked funds for trade settlements
+-- - Credit funds from settlements and redemptions
+--
+-- Users retain control over:
+-- - Withdrawals (owner is controller, not pebbleAdmin)
+-- - Account creation (user must initiate)
+--
+-- This is a CUSTODIAL model where Pebble holds user funds for trading.
+module Pebble.Account where
+
+import Pebble.Types (PebblePermission(..))
+
+-- | TradingAccount: User's trading account for CC tokens
+-- Both owner and pebbleAdmin are signatories for dual-control
+template TradingAccount
+  with
+    owner : Party
+    pebbleAdmin : Party
+    availableBalance : Decimal       -- Funds available for trading
+    lockedBalance : Decimal          -- Funds locked in open orders
+  where
+    -- Both parties are signatories - required for dual-control
+    signatory owner, pebbleAdmin
+
+    ensure availableBalance >= 0.0 && lockedBalance >= 0.0
+
+    -- Lock funds when placing an order
+    choice LockFunds : ContractId TradingAccount
+      with
+        amount : Decimal
+        orderId : Text
+      controller pebbleAdmin
+      do
+        assertMsg "Insufficient available balance" (availableBalance >= amount)
+        assertMsg "Amount must be positive" (amount > 0.0)
+
+        create this with
+          availableBalance = availableBalance - amount
+          lockedBalance = lockedBalance + amount
+
+    -- Unlock funds when order is cancelled
+    choice UnlockFunds : ContractId TradingAccount
+      with
+        amount : Decimal
+        orderId : Text
+      controller pebbleAdmin
+      do
+        assertMsg "Insufficient locked balance" (lockedBalance >= amount)
+        assertMsg "Amount must be positive" (amount > 0.0)
+
+        create this with
+          availableBalance = availableBalance + amount
+          lockedBalance = lockedBalance - amount
+
+    -- Debit locked funds for trade settlement (buyer pays)
+    choice DebitForSettlement : ContractId TradingAccount
+      with
+        amount : Decimal
+        settlementId : Text
+      controller pebbleAdmin
+      do
+        assertMsg "Insufficient locked balance" (lockedBalance >= amount)
+        create this with
+          lockedBalance = lockedBalance - amount
+
+    -- Credit funds from trade settlement (seller receives)
+    choice CreditFromSettlement : ContractId TradingAccount
+      with
+        amount : Decimal
+        settlementId : Text
+      controller pebbleAdmin
+      do
+        create this with
+          availableBalance = availableBalance + amount
+
+    -- Credit funds from market resolution redemption
+    choice CreditFromRedemption : ContractId TradingAccount
+      with
+        amount : Decimal
+        marketId : Text
+      controller pebbleAdmin
+      do
+        create this with
+          availableBalance = availableBalance + amount
+
+    -- Credit funds from deposit
+    choice CreditFromDeposit : ContractId TradingAccount
+      with
+        amount : Decimal
+        depositId : Text  -- Reference for audit trail
+      controller pebbleAdmin
+      do
+        assertMsg "Deposit amount must be positive" (amount > 0.0)
+        create this with
+          availableBalance = availableBalance + amount
+
+    -- User-initiated withdrawal (user is controller)
+    choice WithdrawFunds : ContractId TradingAccount
+      with
+        amount : Decimal
+      controller owner
+      do
+        assertMsg "Insufficient available balance" (availableBalance >= amount)
+        assertMsg "Amount must be positive" (amount > 0.0)
+        -- Note: Actual CC transfer happens via separate mechanism
+        -- This just updates the account balance
+        create this with
+          availableBalance = availableBalance - amount
+
+
+-- | TradingAccountRequest: Proposal pattern for account creation
+-- User initiates, Pebble admin accepts to create TradingAccount
+template TradingAccountRequest
+  with
+    user : Party
+    pebbleAdmin : Party
+    requestedAt : Time
+  where
+    signatory user
+    observer pebbleAdmin
+
+    -- Pebble admin accepts the request, creating the TradingAccount and PebbleAuthorization
+    choice AcceptAccountRequest : (ContractId TradingAccount, ContractId PebbleAuthorization)
+      controller pebbleAdmin
+      do
+        -- Create the trading account
+        accountCid <- create TradingAccount with
+          owner = user
+          pebbleAdmin = pebbleAdmin
+          availableBalance = 0.0
+          lockedBalance = 0.0
+
+        -- Create on-chain authorization record
+        authCid <- create PebbleAuthorization with
+          user = user
+          pebbleAdmin = pebbleAdmin
+          grantedAt = requestedAt
+          permissions = [SettlementPermission, OrderManagementPermission]
+
+        return (accountCid, authCid)
+
+    -- User can cancel their own request
+    choice CancelAccountRequest : ()
+      controller user
+      do return ()
+
+
+-- | PebbleAuthorization: On-chain record of user's authorization to Pebble
+-- This contract serves as an audit trail and enables the settlement service
+-- to act on behalf of users via the Ledger API actAs mechanism.
+template PebbleAuthorization
+  with
+    user : Party
+    pebbleAdmin : Party
+    grantedAt : Time
+    permissions : [PebblePermission]
+  where
+    signatory user, pebbleAdmin  -- Both parties signed via AcceptAccountRequest
+
+    -- Revoke authorization (user can withdraw consent)
+    choice RevokeAuthorization : ()
+      controller user
+      do
+        -- Note: Revoking authorization doesn't affect existing TradingAccount
+        -- User should withdraw funds before revoking
+        return ()
+
+    -- Check if a specific permission is granted
+    nonconsuming choice HasPermission : Bool
+      with
+        permission : PebblePermission
+      controller pebbleAdmin
+      do
+        return (permission `elem` permissions)

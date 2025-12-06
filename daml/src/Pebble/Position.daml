@@ -1,0 +1,209 @@
+-- | Position management for Pebble Prediction Market
+--
+-- Positions represent ownership of YES or NO shares in a market.
+-- Both owner and pebbleAdmin are signatories for dual-control.
+--
+-- Positions can be locked when placed in sell orders to prevent
+-- double-selling the same shares.
+module Pebble.Position where
+
+import Pebble.Types (PositionSide(..))
+import Pebble.Account (TradingAccount, CreditFromRedemption(..))
+import DA.Foldable (forA_)
+
+-- | Position: User's position in a specific market (YES or NO shares)
+template Position
+  with
+    owner : Party
+    pebbleAdmin : Party
+    marketId : Text
+    side : PositionSide     -- YES or NO
+    quantity : Decimal      -- Number of shares (total owned)
+    lockedQuantity : Decimal  -- Shares locked in pending sell orders
+    avgCostBasis : Decimal  -- Average price paid per share
+  where
+    signatory owner, pebbleAdmin  -- Both are signatories for dual-control
+
+    ensure quantity > 0.0 && avgCostBasis >= 0.0 && lockedQuantity >= 0.0 && lockedQuantity <= quantity
+
+    -- Lock shares when placing a sell order
+    choice LockPosition : ContractId Position
+      with
+        lockQuantity : Decimal
+        orderId : Text
+      controller pebbleAdmin
+      do
+        let availableQuantity = quantity - lockedQuantity
+        assertMsg "Lock quantity must be positive" (lockQuantity > 0.0)
+        assertMsg "Insufficient available shares to lock" (availableQuantity >= lockQuantity)
+
+        create this with
+          lockedQuantity = lockedQuantity + lockQuantity
+
+    -- Unlock shares when sell order is cancelled
+    choice UnlockPosition : ContractId Position
+      with
+        unlockQuantity : Decimal
+        orderId : Text
+      controller pebbleAdmin
+      do
+        assertMsg "Unlock quantity must be positive" (unlockQuantity > 0.0)
+        assertMsg "Cannot unlock more than locked" (lockedQuantity >= unlockQuantity)
+
+        create this with
+          lockedQuantity = lockedQuantity - unlockQuantity
+
+    -- Add to position (from trade settlement)
+    choice AddToPosition : ContractId Position
+      with
+        addQuantity : Decimal
+        price : Decimal
+      controller pebbleAdmin
+      do
+        assertMsg "Add quantity must be positive" (addQuantity > 0.0)
+
+        let newQuantity = quantity + addQuantity
+        let newCostBasis = ((quantity * avgCostBasis) + (addQuantity * price)) / newQuantity
+        create this with
+          quantity = newQuantity
+          avgCostBasis = newCostBasis
+
+    -- Reduce position (from trade settlement - uses locked shares)
+    -- Returns None if position is fully closed, Some newCid otherwise
+    choice ReducePosition : Optional (ContractId Position)
+      with
+        reduceQuantity : Decimal
+      controller pebbleAdmin
+      do
+        assertMsg "Cannot reduce more than owned" (quantity >= reduceQuantity)
+        assertMsg "Cannot reduce more than locked (shares must be locked before selling)" (lockedQuantity >= reduceQuantity)
+        assertMsg "Reduce quantity must be positive" (reduceQuantity > 0.0)
+
+        let remainingQuantity = quantity - reduceQuantity
+        let remainingLocked = lockedQuantity - reduceQuantity
+        if remainingQuantity == 0.0
+          then return None  -- Position fully closed, contract archived
+          else do
+            newCid <- create this with
+              quantity = remainingQuantity
+              lockedQuantity = remainingLocked
+            return (Some newCid)
+
+
+-- | PositionConsolidation: Merge multiple positions into one
+-- Keeps UTXO count low (recommended < 10 per user per market)
+-- Note: Only unlocked positions can be consolidated
+template PositionConsolidation
+  with
+    owner : Party
+    pebbleAdmin : Party
+    marketId : Text
+    side : PositionSide
+    positionsToMerge : [ContractId Position]  -- List of position contract IDs
+  where
+    signatory owner, pebbleAdmin
+
+    ensure length positionsToMerge >= 2
+
+    -- Merge all positions into a single new position
+    choice ExecuteConsolidation : ContractId Position
+      controller pebbleAdmin
+      do
+        -- Fetch all positions and validate
+        positions <- forA positionsToMerge fetch
+
+        -- Verify all positions belong to same owner, market, and side
+        -- Also verify no locked quantities (can't consolidate positions with pending orders)
+        forA_ positions $ \p -> do
+          assertMsg "Position owner mismatch" (p.owner == owner)
+          assertMsg "Position market mismatch" (p.marketId == marketId)
+          assertMsg "Position side mismatch" (p.side == side)
+          assertMsg "Cannot consolidate positions with locked shares" (p.lockedQuantity == 0.0)
+
+        -- Calculate consolidated values
+        let totalQuantity = sum $ map (.quantity) positions
+        let weightedCostBasis = sum $ map (\p -> p.quantity * p.avgCostBasis) positions
+        let newAvgCostBasis = weightedCostBasis / totalQuantity
+
+        -- Archive old positions
+        forA_ positionsToMerge archive
+
+        -- Create consolidated position
+        create Position with
+          owner = owner
+          pebbleAdmin = pebbleAdmin
+          marketId = marketId
+          side = side
+          quantity = totalQuantity
+          lockedQuantity = 0.0
+          avgCostBasis = newAvgCostBasis
+
+    -- Cancel consolidation request
+    choice CancelConsolidation : ()
+      controller owner
+      do return ()
+
+
+-- | PositionMerge: Merge YES + NO positions back to collateral
+-- In binary prediction markets, 1 YES + 1 NO = $1.00 guaranteed.
+-- This allows users to exit positions efficiently without selling.
+template PositionMerge
+  with
+    owner : Party
+    pebbleAdmin : Party
+    marketId : Text
+    yesPositionCid : ContractId Position
+    noPositionCid : ContractId Position
+    mergeQuantity : Decimal  -- Amount of each to merge (must have both)
+  where
+    signatory owner, pebbleAdmin
+
+    ensure mergeQuantity > 0.0
+
+    -- Execute the merge: destroy equal YES + NO shares, credit $1 per pair
+    choice ExecuteMerge : ContractId TradingAccount
+      with
+        accountCid : ContractId TradingAccount
+      controller pebbleAdmin
+      do
+        -- Fetch and validate positions
+        yesPos <- fetch yesPositionCid
+        noPos <- fetch noPositionCid
+
+        -- Verify ownership and market
+        assertMsg "YES position owner mismatch" (yesPos.owner == owner)
+        assertMsg "NO position owner mismatch" (noPos.owner == owner)
+        assertMsg "YES position market mismatch" (yesPos.marketId == marketId)
+        assertMsg "NO position market mismatch" (noPos.marketId == marketId)
+        assertMsg "YES position side mismatch" (yesPos.side == YES)
+        assertMsg "NO position side mismatch" (noPos.side == NO)
+
+        -- Verify sufficient unlocked quantity
+        let yesAvailable = yesPos.quantity - yesPos.lockedQuantity
+        let noAvailable = noPos.quantity - noPos.lockedQuantity
+        assertMsg "Insufficient YES shares available" (yesAvailable >= mergeQuantity)
+        assertMsg "Insufficient NO shares available" (noAvailable >= mergeQuantity)
+
+        -- Lock both positions first (for atomicity)
+        yesLockedCid <- exercise yesPositionCid LockPosition with
+          lockQuantity = mergeQuantity
+          orderId = "merge"
+
+        noLockedCid <- exercise noPositionCid LockPosition with
+          lockQuantity = mergeQuantity
+          orderId = "merge"
+
+        -- Reduce both positions
+        exercise yesLockedCid ReducePosition with reduceQuantity = mergeQuantity
+        exercise noLockedCid ReducePosition with reduceQuantity = mergeQuantity
+
+        -- Credit account with $1 per merged pair
+        let payout = mergeQuantity * 1.0
+        exercise accountCid CreditFromRedemption with
+          amount = payout
+          marketId = marketId
+
+    -- Cancel merge request
+    choice CancelMerge : ()
+      controller owner
+      do return ()

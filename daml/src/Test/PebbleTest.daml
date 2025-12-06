@@ -1,0 +1,455 @@
+-- | Test scenarios for Pebble Prediction Market contracts
+module Test.PebbleTest where
+
+import Daml.Script
+import Pebble.Types
+import Pebble.Account
+import Pebble.Market
+import Pebble.Position
+import Pebble.Settlement
+import Pebble.Oracle
+import DA.Time (addRelTime, hours)
+
+-- | Test party setup
+data TestParties = TestParties
+  with
+    pebbleAdmin : Party
+    alice : Party
+    bob : Party
+    oracle : Party
+  deriving (Show, Eq)
+
+-- | Allocate test parties
+setupParties : Script TestParties
+setupParties = do
+  pebbleAdmin <- allocateParty "PebbleAdmin"
+  alice <- allocateParty "Alice"
+  bob <- allocateParty "Bob"
+  oracle <- allocateParty "Oracle"
+  return TestParties{..}
+
+
+-- | Test: Account creation flow
+testAccountCreation : Script ()
+testAccountCreation = script do
+  TestParties{..} <- setupParties
+
+  -- Alice requests an account
+  now <- getTime
+  requestCid <- submit alice do
+    createCmd TradingAccountRequest with
+      user = alice
+      pebbleAdmin = pebbleAdmin
+      requestedAt = now
+
+  -- PebbleAdmin accepts the request
+  (accountCid, authCid) <- submit pebbleAdmin do
+    exerciseCmd requestCid AcceptAccountRequest
+
+  -- Verify account was created
+  account <- queryContractId alice accountCid
+  case account of
+    Some a -> do
+      assert (a.owner == alice)
+      assert (a.availableBalance == 0.0)
+      assert (a.lockedBalance == 0.0)
+    None -> abort "Account not found"
+
+  return ()
+
+
+-- | Test: Fund locking and unlocking
+testFundLocking : Script ()
+testFundLocking = script do
+  TestParties{..} <- setupParties
+
+  -- Create account for Alice
+  now <- getTime
+  requestCid <- submit alice do
+    createCmd TradingAccountRequest with
+      user = alice
+      pebbleAdmin = pebbleAdmin
+      requestedAt = now
+
+  (accountCid, _) <- submit pebbleAdmin do
+    exerciseCmd requestCid AcceptAccountRequest
+
+  -- Deposit funds (simulated by credit)
+  accountCid <- submit pebbleAdmin do
+    exerciseCmd accountCid CreditFromDeposit with
+      amount = 100.0
+      depositId = "deposit-1"
+
+  -- Lock funds for an order
+  accountCid <- submit pebbleAdmin do
+    exerciseCmd accountCid LockFunds with
+      amount = 50.0
+      orderId = "order-1"
+
+  -- Verify balances
+  account <- queryContractId alice accountCid
+  case account of
+    Some a -> do
+      assert (a.availableBalance == 50.0)
+      assert (a.lockedBalance == 50.0)
+    None -> abort "Account not found"
+
+  -- Unlock funds (order cancelled)
+  accountCid <- submit pebbleAdmin do
+    exerciseCmd accountCid UnlockFunds with
+      amount = 50.0
+      orderId = "order-1"
+
+  -- Verify all unlocked
+  account <- queryContractId alice accountCid
+  case account of
+    Some a -> do
+      assert (a.availableBalance == 100.0)
+      assert (a.lockedBalance == 0.0)
+    None -> abort "Account not found"
+
+  return ()
+
+
+-- | Test: Market lifecycle
+testMarketLifecycle : Script ()
+testMarketLifecycle = script do
+  TestParties{..} <- setupParties
+
+  -- Create a market
+  now <- getTime
+  let resolutionTime = addRelTime now (hours 24)
+
+  marketCid <- submit pebbleAdmin do
+    createCmd Market with
+      marketId = "market-1"
+      admin = pebbleAdmin
+      question = "Will ETH reach $5000 by end of 2025?"
+      description = "Resolves YES if ETH price is >= $5000 on Dec 31, 2025"
+      resolutionTime = resolutionTime
+      createdAt = now
+      status = Open
+      outcome = None
+      version = 0
+
+  -- Market should be open
+  market <- queryContractId pebbleAdmin marketCid
+  case market of
+    Some m -> assert (m.status == Open)
+    None -> abort "Market not found"
+
+  -- Close the market
+  marketCid <- submit pebbleAdmin do
+    exerciseCmd marketCid CloseMarket
+
+  -- Verify closed
+  market <- queryContractId pebbleAdmin marketCid
+  case market of
+    Some m -> do
+      assert (m.status == Closed)
+      assert (m.version == 1)
+    None -> abort "Market not found"
+
+  -- Resolve the market
+  marketCid <- submit pebbleAdmin do
+    exerciseCmd marketCid ResolveMarket with
+      marketOutcome = True  -- YES wins
+
+  -- Verify resolved
+  market <- queryContractId pebbleAdmin marketCid
+  case market of
+    Some m -> do
+      assert (m.status == Resolved)
+      assert (m.outcome == Some True)
+      assert (m.version == 2)
+    None -> abort "Market not found"
+
+  return ()
+
+
+-- | Test: Position management
+testPositionManagement : Script ()
+testPositionManagement = script do
+  TestParties{..} <- setupParties
+
+  -- Create position for Alice (simulating settlement result)
+  positionCid <- submitMulti [alice, pebbleAdmin] [] do
+    createCmd Position with
+      owner = alice
+      pebbleAdmin = pebbleAdmin
+      marketId = "market-1"
+      side = YES
+      quantity = 100.0
+      lockedQuantity = 0.0
+      avgCostBasis = 0.50
+
+  -- Lock some position for a sell order
+  positionCid <- submit pebbleAdmin do
+    exerciseCmd positionCid LockPosition with
+      lockQuantity = 30.0
+      orderId = "sell-order-1"
+
+  -- Verify lock
+  position <- queryContractId alice positionCid
+  case position of
+    Some p -> do
+      assert (p.quantity == 100.0)
+      assert (p.lockedQuantity == 30.0)
+    None -> abort "Position not found"
+
+  -- Add more to position
+  positionCid <- submit pebbleAdmin do
+    exerciseCmd positionCid AddToPosition with
+      addQuantity = 50.0
+      price = 0.60
+
+  -- Verify new cost basis (weighted average)
+  position <- queryContractId alice positionCid
+  case position of
+    Some p -> do
+      assert (p.quantity == 150.0)
+      -- Expected: ((100 * 0.50) + (50 * 0.60)) / 150 = 80/150 = 0.5333...
+      let expectedCostBasis = ((100.0 * 0.50) + (50.0 * 0.60)) / 150.0
+      assert (p.avgCostBasis == expectedCostBasis)
+    None -> abort "Position not found"
+
+  return ()
+
+
+-- | Test: Oracle resolution request
+testOracleResolution : Script ()
+testOracleResolution = script do
+  TestParties{..} <- setupParties
+
+  -- Create an AdminOracle
+  oracleCid <- submit oracle do
+    createCmd AdminOracle with
+      admin = oracle
+      pebbleAdmin = pebbleAdmin
+
+  -- Create a market
+  now <- getTime
+  let resolutionTime = addRelTime now (hours 24)
+
+  marketCid <- submit pebbleAdmin do
+    createCmd Market with
+      marketId = "market-1"
+      admin = pebbleAdmin
+      question = "Test question"
+      description = "Test description"
+      resolutionTime = resolutionTime
+      createdAt = now
+      status = Open
+      outcome = None
+      version = 0
+
+  -- Oracle submits resolution
+  let request = SubmitResolutionRequest with
+        marketId = "market-1"
+        outcome = True
+        evidence = Some "Official results"
+        currentMarketStatus = Open
+        marketVersion = 0
+
+  resolutionRequestCid <- submit oracle do
+    exerciseCmd (toInterfaceContractId @Oracle oracleCid) SubmitResolution with
+      request = request
+
+  -- Verify resolution request was created
+  resolutionRequest <- queryContractId pebbleAdmin resolutionRequestCid
+  case resolutionRequest of
+    Some r -> do
+      assert (r.marketId == "market-1")
+      assert (r.outcome == True)
+      assert (r.expectedMarketStatus == Open)
+    None -> abort "Resolution request not found"
+
+  return ()
+
+
+-- | Test: Three-stage settlement flow
+testSettlementFlow : Script ()
+testSettlementFlow = script do
+  TestParties{..} <- setupParties
+  now <- getTime
+
+  -- Setup: Create accounts for both parties
+  aliceReqCid <- submit alice do
+    createCmd TradingAccountRequest with
+      user = alice
+      pebbleAdmin = pebbleAdmin
+      requestedAt = now
+
+  bobReqCid <- submit bob do
+    createCmd TradingAccountRequest with
+      user = bob
+      pebbleAdmin = pebbleAdmin
+      requestedAt = now
+
+  (aliceAccountCid, _) <- submit pebbleAdmin do
+    exerciseCmd aliceReqCid AcceptAccountRequest
+
+  (bobAccountCid, _) <- submit pebbleAdmin do
+    exerciseCmd bobReqCid AcceptAccountRequest
+
+  -- Fund accounts
+  aliceAccountCid <- submit pebbleAdmin do
+    exerciseCmd aliceAccountCid CreditFromDeposit with
+      amount = 100.0
+      depositId = "alice-deposit"
+
+  bobAccountCid <- submit pebbleAdmin do
+    exerciseCmd bobAccountCid CreditFromDeposit with
+      amount = 100.0
+      depositId = "bob-deposit"
+
+  -- Lock funds for the trade
+  aliceAccountCid <- submit pebbleAdmin do
+    exerciseCmd aliceAccountCid LockFunds with
+      amount = 40.0  -- Alice is buying YES at 0.40
+      orderId = "settlement-1"
+
+  bobAccountCid <- submit pebbleAdmin do
+    exerciseCmd bobAccountCid LockFunds with
+      amount = 60.0  -- Bob is buying NO at 0.60 (complement)
+      orderId = "settlement-1"
+
+  -- Create market for reference
+  let resolutionTime = addRelTime now (hours 24)
+  marketCid <- submit pebbleAdmin do
+    createCmd Market with
+      marketId = "market-1"
+      admin = pebbleAdmin
+      question = "Test market"
+      description = "For settlement testing"
+      resolutionTime = resolutionTime
+      createdAt = now
+      status = Open
+      outcome = None
+      version = 0
+
+  -- Stage 1: Create settlement proposal (ShareCreation - both are buyers)
+  proposalCid <- submit pebbleAdmin do
+    createCmd SettlementProposal with
+      pebbleAdmin = pebbleAdmin
+      buyer = alice  -- YES buyer
+      seller = bob   -- NO buyer (counterparty)
+      marketId = "market-1"
+      side = YES
+      quantity = 100.0
+      price = 0.40  -- YES price, NO price = 0.60
+      proposalId = "settlement-1"
+      createdAt = now
+      tradeType = ShareCreation
+      sellerPositionLockedQuantity = None
+      marketContractId = marketCid
+
+  -- Stage 2: Buyer (Alice) accepts
+  acceptedCid <- submit alice do
+    exerciseCmd proposalCid BuyerAccept
+
+  -- Stage 3: Seller (Bob) accepts - creates Settlement
+  settlementCid <- submit bob do
+    exerciseCmd acceptedCid SellerAccept
+
+  -- Execute the settlement
+  result <- submitMulti [pebbleAdmin, alice, bob] [] do
+    exerciseCmd settlementCid ExecuteSettlement with
+      buyerAccountCid = aliceAccountCid
+      sellerAccountCid = bobAccountCid
+      buyerPositionCid = None  -- New positions will be created
+      sellerPositionCid = None
+
+  -- Verify result
+  -- Alice should have YES position
+  case result.buyerPositionCid of
+    Some posCid -> do
+      pos <- queryContractId alice posCid
+      case pos of
+        Some p -> do
+          assert (p.side == YES)
+          assert (p.quantity == 100.0)
+          assert (p.avgCostBasis == 0.40)
+        None -> abort "Alice position not found"
+    None -> abort "No buyer position created"
+
+  -- Bob should have NO position
+  case result.sellerPositionCid of
+    Some posCid -> do
+      pos <- queryContractId bob posCid
+      case pos of
+        Some p -> do
+          assert (p.side == NO)
+          assert (p.quantity == 100.0)
+          assert (p.avgCostBasis == 0.60)
+        None -> abort "Bob position not found"
+    None -> abort "No seller position created"
+
+  return ()
+
+
+-- | Test: Market resolution redemption
+testMarketRedemption : Script ()
+testMarketRedemption = script do
+  TestParties{..} <- setupParties
+  now <- getTime
+
+  -- Create account for Alice
+  aliceReqCid <- submit alice do
+    createCmd TradingAccountRequest with
+      user = alice
+      pebbleAdmin = pebbleAdmin
+      requestedAt = now
+
+  (aliceAccountCid, _) <- submit pebbleAdmin do
+    exerciseCmd aliceReqCid AcceptAccountRequest
+
+  -- Create a winning YES position for Alice
+  alicePositionCid <- submitMulti [alice, pebbleAdmin] [] do
+    createCmd Position with
+      owner = alice
+      pebbleAdmin = pebbleAdmin
+      marketId = "market-1"
+      side = YES
+      quantity = 50.0
+      lockedQuantity = 0.0
+      avgCostBasis = 0.40
+
+  -- Create MarketSettlement (market resolved YES wins)
+  settlementCid <- submit pebbleAdmin do
+    createCmd MarketSettlement with
+      pebbleAdmin = pebbleAdmin
+      marketId = "market-1"
+      outcome = True  -- YES wins
+      settledAt = now
+
+  -- Alice redeems her winning position
+  (newAccountCid, payout) <- submitMulti [pebbleAdmin, alice] [] do
+    exerciseCmd settlementCid RedeemPosition with
+      positionCid = alicePositionCid
+      accountCid = aliceAccountCid
+      positionOwner = alice
+
+  -- Verify payout
+  assert (payout == 50.0)  -- 50 shares * $1.00 per share
+
+  -- Verify account credited
+  account <- queryContractId alice newAccountCid
+  case account of
+    Some a -> assert (a.availableBalance == 50.0)
+    None -> abort "Account not found"
+
+  return ()
+
+
+-- | Run all tests
+main : Script ()
+main = script do
+  testAccountCreation
+  testFundLocking
+  testMarketLifecycle
+  testPositionManagement
+  testOracleResolution
+  testSettlementFlow
+  testMarketRedemption
+  return ()

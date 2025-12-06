@@ -1,0 +1,27 @@
+{
+  "name": "pebble-backend",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "dev:fresh": "bun run --watch src/index.ts --fresh",
+    "start": "bun run src/index.ts",
+    "start:fresh": "bun run src/index.ts --fresh",
+    "test": "bun test",
+    "test:unit": "bun test tests/unit",
+    "test:integration": "bun test tests/integration",
+    "test:e2e": "bun test tests/e2e",
+    "test:load": "bun test tests/load --timeout 60000",
+    "test:coverage": "bun test --coverage",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "bun run src/db/migrations.ts"
+  },
+  "dependencies": {
+    "hono": "^4.6.0",
+    "decimal.js": "^10.4.3"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.0",
+    "typescript": "^5.5.0"
+  }
+}

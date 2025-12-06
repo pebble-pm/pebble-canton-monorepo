@@ -1,0 +1,30 @@
+-- | Shared data types for Pebble Prediction Market
+module Pebble.Types where
+
+-- | Market lifecycle status
+data MarketStatus
+  = Open      -- ^ Market is accepting trades
+  | Closed    -- ^ Market is closed for trading, awaiting resolution
+  | Resolved  -- ^ Market has been resolved with an outcome
+  deriving (Eq, Show)
+
+-- | Position side in a binary market
+data PositionSide
+  = YES  -- ^ Bet on the positive outcome
+  | NO   -- ^ Bet on the negative outcome
+  deriving (Eq, Show)
+
+-- | Type of trade execution
+-- ShareTrade: Trading existing shares between parties
+-- ShareCreation: Creating new YES+NO share pair (both parties are buyers)
+data TradeType
+  = ShareTrade      -- ^ Seller transfers existing shares to buyer
+  | ShareCreation   -- ^ YES buyer + NO buyer create new share pair
+  deriving (Eq, Show)
+
+-- | Permission types for fine-grained authorization
+data PebblePermission
+  = SettlementPermission       -- ^ Allow Pebble to execute settlements
+  | OrderManagementPermission  -- ^ Allow Pebble to lock/unlock funds for orders
+  | WithdrawalPermission       -- ^ Allow Pebble to initiate withdrawals (future)
+  deriving (Eq, Show)

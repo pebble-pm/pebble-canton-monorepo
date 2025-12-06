@@ -1,0 +1,13 @@
+# Pebble Prediction Market - Daml Smart Contracts
+# https://docs.digitalasset.com/build/3.4/dpm/configuration.html
+
+sdk-version: 3.4.9
+name: pebble
+source: src
+version: 0.1.0
+dependencies:
+  - daml-prim
+  - daml-stdlib
+  - daml-script
+build-options:
+  - -Wno-upgrade-interfaces

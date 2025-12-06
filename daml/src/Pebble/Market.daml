@@ -1,0 +1,71 @@
+-- | Market contract for Pebble Prediction Market
+--
+-- Represents a YES/NO prediction market with lifecycle management.
+-- Markets go through: Open -> Closed -> Resolved
+--
+-- VERSION FIELD: Incremented on every state change to enable
+-- freshness checks in oracle resolution. This prevents stale
+-- resolution requests from being applied to markets that have
+-- been modified since the request was created.
+module Pebble.Market where
+
+import Pebble.Types (MarketStatus(..))
+
+-- | Market: Represents a YES/NO prediction market
+template Market
+  with
+    marketId : Text
+    admin : Party         -- The Pebble admin who can manage this market
+    question : Text       -- The prediction question
+    description : Text    -- Detailed description
+    resolutionTime : Time -- When the market should resolve
+    createdAt : Time
+    status : MarketStatus -- Open, Closed, Resolved
+    outcome : Optional Bool  -- None until resolved, Some True = YES wins
+    version : Int         -- Incremented on each state change for freshness checks
+  where
+    signatory admin
+
+    ensure marketId /= "" && version >= 0
+
+    -- Close market for trading (no more orders accepted)
+    choice CloseMarket : ContractId Market
+      controller admin
+      do
+        assertMsg "Market already closed or resolved" (status == Open)
+        create this with
+          status = Closed
+          version = version + 1
+
+    -- Reopen a closed market (before resolution)
+    choice ReopenMarket : ContractId Market
+      controller admin
+      do
+        assertMsg "Can only reopen a closed market" (status == Closed)
+        create this with
+          status = Open
+          version = version + 1
+
+    -- Resolve market with outcome (typically called after oracle resolution request)
+    choice ResolveMarket : ContractId Market
+      with
+        marketOutcome : Bool  -- True = YES wins, False = NO wins
+      controller admin
+      do
+        assertMsg "Market must be closed first" (status == Closed)
+        create this with
+          status = Resolved
+          outcome = Some marketOutcome
+          version = version + 1
+
+    -- Get the current market status (non-consuming)
+    nonconsuming choice GetMarketStatus : MarketStatus
+      controller admin
+      do
+        return status
+
+    -- Get the current version (non-consuming)
+    nonconsuming choice GetMarketVersion : Int
+      controller admin
+      do
+        return version

@@ -1,0 +1,375 @@
+-- | Settlement contracts for Pebble Prediction Market
+--
+-- Three-stage settlement with proper authorization:
+--
+-- DAML signatories are fixed at contract creation time and cannot be
+-- conditional. We use a multi-stage pattern where each acceptance
+-- creates a new contract with additional signatories:
+--
+-- Stage 1: SettlementProposal (signatory: pebbleAdmin)
+-- Stage 2: SettlementProposalAccepted (signatory: pebbleAdmin, buyer)
+-- Stage 3: Settlement (signatory: pebbleAdmin, buyer, seller)
+--
+-- This ensures proper authorization for modifying TradingAccount and
+-- Position contracts which require both owner and pebbleAdmin.
+module Pebble.Settlement where
+
+import Pebble.Types (PositionSide(..), TradeType(..), MarketStatus(..))
+import Pebble.Account (TradingAccount, DebitForSettlement(..), CreditFromSettlement(..), CreditFromRedemption(..))
+import Pebble.Position (Position(..), AddToPosition(..), ReducePosition(..), LockPosition(..))
+import Pebble.Market (Market(..))
+import DA.Time (addRelTime, minutes)
+
+-- | Result of executing a settlement
+data SettlementResult = SettlementResult
+  with
+    settlementId : Text
+    buyerAccountCid : ContractId TradingAccount
+    sellerAccountCid : ContractId TradingAccount
+    buyerPositionCid : Optional (ContractId Position)
+    sellerPositionCid : Optional (ContractId Position)
+  deriving (Eq, Show)
+
+
+-- | SettlementProposal: Stage 1 of three-stage settlement
+-- pebbleAdmin creates this after matching orders off-chain
+template SettlementProposal
+  with
+    pebbleAdmin : Party
+    buyer : Party
+    seller : Party
+    marketId : Text
+    side : PositionSide
+    quantity : Decimal
+    price : Decimal  -- Price per share (0.01 to 0.99 representing probability)
+    proposalId : Text
+    createdAt : Time
+    tradeType : TradeType
+    -- New fields for position locking and market verification
+    sellerPositionLockedQuantity : Optional Decimal  -- For ShareTrade: expected locked qty at order time
+    marketContractId : ContractId Market  -- For market status verification during settlement
+  where
+    signatory pebbleAdmin
+    observer buyer, seller
+
+    ensure quantity > 0.0 && price >= 0.01 && price <= 0.99
+
+    -- Buyer accepts the settlement proposal, creating intermediate contract
+    choice BuyerAccept : ContractId SettlementProposalAccepted
+      controller buyer
+      do
+        create SettlementProposalAccepted with
+          pebbleAdmin = pebbleAdmin
+          buyer = buyer
+          seller = seller
+          marketId = marketId
+          side = side
+          quantity = quantity
+          price = price
+          proposalId = proposalId
+          createdAt = createdAt
+          tradeType = tradeType
+          sellerPositionLockedQuantity = sellerPositionLockedQuantity
+          marketContractId = marketContractId
+
+    -- Cancel the proposal
+    choice CancelProposal : ()
+      controller pebbleAdmin
+      do return ()
+
+    -- Timeout/expire the proposal
+    choice ExpireProposal : ()
+      controller pebbleAdmin
+      do
+        now <- getTime
+        -- Proposals expire after 5 minutes
+        let expiryTime = addRelTime createdAt (minutes 5)
+        assertMsg "Proposal has not expired yet" (now > expiryTime)
+        return ()
+
+
+-- | SettlementProposalAccepted: Stage 2 after buyer accepts
+-- Now buyer is a signatory, awaiting seller acceptance
+template SettlementProposalAccepted
+  with
+    pebbleAdmin : Party
+    buyer : Party
+    seller : Party
+    marketId : Text
+    side : PositionSide
+    quantity : Decimal
+    price : Decimal
+    proposalId : Text
+    createdAt : Time
+    tradeType : TradeType
+    sellerPositionLockedQuantity : Optional Decimal
+    marketContractId : ContractId Market
+  where
+    signatory pebbleAdmin, buyer
+    observer seller
+
+    ensure quantity > 0.0 && price >= 0.01 && price <= 0.99
+
+    -- Seller accepts, creating the final Settlement contract
+    choice SellerAccept : ContractId Settlement
+      controller seller
+      do
+        create Settlement with
+          pebbleAdmin = pebbleAdmin
+          buyer = buyer
+          seller = seller
+          marketId = marketId
+          side = side
+          quantity = quantity
+          price = price
+          settlementId = proposalId
+          createdAt = createdAt
+          tradeType = tradeType
+          sellerPositionLockedQuantity = sellerPositionLockedQuantity
+          marketContractId = marketContractId
+
+    -- Cancel (requires buyer consent since they are signatory)
+    choice CancelAcceptedProposal : ()
+      controller pebbleAdmin
+      do return ()
+
+    -- Timeout/expire
+    choice ExpireAcceptedProposal : ()
+      controller pebbleAdmin
+      do
+        now <- getTime
+        let expiryTime = addRelTime createdAt (minutes 5)
+        assertMsg "Proposal has not expired yet" (now > expiryTime)
+        return ()
+
+
+-- | Settlement: Stage 3 - Atomic trade settlement between two parties
+-- Uses CONSUMING choice to prevent double-execution
+--
+-- AUTHORIZATION MODEL:
+-- All three parties (pebbleAdmin, buyer, seller) are signatories.
+-- This provides proper authorization to:
+-- - Exercise choices on TradingAccount (signatory: owner, pebbleAdmin)
+-- - Create/archive Position contracts (signatory: owner, pebbleAdmin)
+template Settlement
+  with
+    pebbleAdmin : Party
+    buyer : Party
+    seller : Party
+    marketId : Text
+    side : PositionSide
+    quantity : Decimal
+    price : Decimal  -- Price per share (0.01 to 0.99 representing probability)
+    settlementId : Text
+    createdAt : Time
+    tradeType : TradeType  -- ShareTrade (existing shares) or ShareCreation (new YES+NO pair)
+    -- Position locking verification: stored at order/trade creation time
+    sellerPositionLockedQuantity : Optional Decimal  -- Expected locked quantity for ShareTrade
+    marketContractId : ContractId Market  -- For market status verification
+  where
+    -- All three parties are signatories - required for proper authorization
+    -- buyer/seller consent is obtained via SettlementProposal acceptance
+    signatory pebbleAdmin, buyer, seller
+
+    ensure quantity > 0.0 && price >= 0.01 && price <= 0.99
+
+    -- Execute the settlement atomically (CONSUMING - can only execute once)
+    choice ExecuteSettlement : SettlementResult
+      with
+        buyerAccountCid : ContractId TradingAccount
+        sellerAccountCid : ContractId TradingAccount
+        buyerPositionCid : Optional (ContractId Position)
+        sellerPositionCid : Optional (ContractId Position)
+      controller pebbleAdmin
+      do
+        -- CRITICAL: Verify market is still open before settling
+        -- This prevents settlements on closed/resolved markets
+        market <- fetch marketContractId
+        assertMsg "Market is not open for settlement" (market.status == Open)
+        assertMsg "Market ID mismatch" (market.marketId == marketId)
+
+        -- Verify accounts belong to correct parties
+        buyerAccount <- fetch buyerAccountCid
+        sellerAccount <- fetch sellerAccountCid
+        assertMsg "Buyer account mismatch" (buyerAccount.owner == buyer)
+        assertMsg "Seller account mismatch" (sellerAccount.owner == seller)
+
+        -- Handle fund flows and positions based on trade type
+        case tradeType of
+          -- ShareTrade: Buyer pays seller for existing shares
+          ShareTrade -> do
+            let totalCost = quantity * price
+
+            -- CRITICAL: Verify seller's position has sufficient locked shares
+            case sellerPositionCid of
+              None -> error "Seller must have position for ShareTrade"
+              Some posCid -> do
+                sellerPosition <- fetch posCid
+                assertMsg "Seller position owner mismatch" (sellerPosition.owner == seller)
+                assertMsg "Seller position market mismatch" (sellerPosition.marketId == marketId)
+                assertMsg "Seller position side mismatch" (sellerPosition.side == side)
+                assertMsg "Insufficient locked shares for settlement"
+                  (sellerPosition.lockedQuantity >= quantity)
+                -- Optional: verify expected locked quantity matches
+                case sellerPositionLockedQuantity of
+                  Some expectedLocked ->
+                    assertMsg "Position locked quantity changed since order placement (stale contract)"
+                      (sellerPosition.lockedQuantity == expectedLocked)
+                  None -> return ()
+
+            -- Debit buyer (pays for shares)
+            newBuyerAcct <- exercise buyerAccountCid DebitForSettlement with
+              amount = totalCost
+              settlementId = settlementId
+
+            -- Credit seller (receives payment)
+            newSellerAcct <- exercise sellerAccountCid CreditFromSettlement with
+              amount = totalCost
+              settlementId = settlementId
+
+            -- Buyer gains position
+            newBuyerPos <- case buyerPositionCid of
+              Some posCid -> do
+                newPosCid <- exercise posCid AddToPosition with
+                  addQuantity = quantity
+                  price = price
+                return (Some newPosCid)
+              None -> do
+                newPosCid <- create Position with
+                  owner = buyer
+                  pebbleAdmin = pebbleAdmin
+                  marketId = marketId
+                  side = side
+                  quantity = quantity
+                  lockedQuantity = 0.0
+                  avgCostBasis = price
+                return (Some newPosCid)
+
+            -- Seller loses position
+            newSellerPos <- case sellerPositionCid of
+              Some posCid -> exercise posCid ReducePosition with
+                reduceQuantity = quantity
+              None -> error "Seller must have position for ShareTrade"
+
+            return SettlementResult with
+              settlementId = settlementId
+              buyerAccountCid = newBuyerAcct
+              sellerAccountCid = newSellerAcct
+              buyerPositionCid = newBuyerPos
+              sellerPositionCid = newSellerPos
+
+          -- ShareCreation: YES buyer + NO buyer create new share pair
+          -- Both parties are BUYERS paying complementary prices that sum to $1
+          -- "buyer" = YES buyer, "seller" = NO buyer (counterparty)
+          ShareCreation -> do
+            let yesCost = quantity * price           -- YES buyer pays this
+            let noCost = quantity * (1.0 - price)    -- NO buyer pays this
+            -- Note: yesCost + noCost = quantity * 1.0 (fully collateralized)
+
+            -- Debit YES buyer (the "buyer" in this settlement)
+            newYesBuyerAcct <- exercise buyerAccountCid DebitForSettlement with
+              amount = yesCost
+              settlementId = settlementId
+
+            -- Debit NO buyer (the "seller"/counterparty in this settlement)
+            newNoBuyerAcct <- exercise sellerAccountCid DebitForSettlement with
+              amount = noCost
+              settlementId = settlementId
+
+            -- YES buyer gets YES position
+            newYesPos <- case buyerPositionCid of
+              Some posCid -> do
+                newPosCid <- exercise posCid AddToPosition with
+                  addQuantity = quantity
+                  price = price
+                return (Some newPosCid)
+              None -> do
+                newPosCid <- create Position with
+                  owner = buyer
+                  pebbleAdmin = pebbleAdmin
+                  marketId = marketId
+                  side = YES
+                  quantity = quantity
+                  lockedQuantity = 0.0
+                  avgCostBasis = price
+                return (Some newPosCid)
+
+            -- NO buyer (counterparty) gets NO position
+            let noPrice = 1.0 - price
+            newNoPos <- case sellerPositionCid of
+              Some posCid -> do
+                newPosCid <- exercise posCid AddToPosition with
+                  addQuantity = quantity
+                  price = noPrice
+                return (Some newPosCid)
+              None -> do
+                newPosCid <- create Position with
+                  owner = seller
+                  pebbleAdmin = pebbleAdmin
+                  marketId = marketId
+                  side = NO
+                  quantity = quantity
+                  lockedQuantity = 0.0
+                  avgCostBasis = noPrice
+                return (Some newPosCid)
+
+            return SettlementResult with
+              settlementId = settlementId
+              buyerAccountCid = newYesBuyerAcct
+              sellerAccountCid = newNoBuyerAcct
+              buyerPositionCid = newYesPos
+              sellerPositionCid = newNoPos
+
+    -- Cancel settlement if it can't be executed
+    choice CancelSettlement : ()
+      controller pebbleAdmin
+      do return ()
+
+
+-- | MarketSettlement: Final settlement when market resolves
+-- Created after market is resolved, allows position redemption
+template MarketSettlement
+  with
+    pebbleAdmin : Party
+    marketId : Text
+    outcome : Bool  -- True = YES wins, False = NO wins
+    settledAt : Time
+  where
+    signatory pebbleAdmin
+
+    -- Redeem winning position for $1 per share
+    -- Note: This requires the position owner to be authorized
+    -- In practice, the backend submits this on behalf of users
+    choice RedeemPosition : (ContractId TradingAccount, Decimal)
+      with
+        positionCid : ContractId Position
+        accountCid : ContractId TradingAccount
+        positionOwner : Party  -- Explicit owner for authorization
+      controller pebbleAdmin, positionOwner
+      do
+        position <- fetch positionCid
+        assertMsg "Wrong market" (position.marketId == marketId)
+        assertMsg "Position owner mismatch" (position.owner == positionOwner)
+
+        let isWinner = (position.side == YES && outcome) ||
+                       (position.side == NO && not outcome)
+        assertMsg "Position did not win" isWinner
+
+        -- Pay $1 per winning share
+        let payout = position.quantity * 1.0
+
+        -- Lock and then reduce position to archive it
+        lockedCid <- exercise positionCid LockPosition with
+          lockQuantity = position.quantity
+          orderId = "redemption"
+
+        -- Archive the position
+        exercise lockedCid ReducePosition with
+          reduceQuantity = position.quantity
+
+        -- Credit the account
+        newAccountCid <- exercise accountCid CreditFromRedemption with
+          amount = payout
+          marketId = marketId
+
+        return (newAccountCid, payout)

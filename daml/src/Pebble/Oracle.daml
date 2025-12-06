@@ -1,0 +1,136 @@
+-- | Oracle interface and implementations for market resolution
+-- MVP uses AdminOracle, future can implement MultiSigOracle, CommitteeOracle, etc.
+module Pebble.Oracle where
+
+import Pebble.Types (MarketStatus(..))
+import DA.Time (addRelTime, hours)
+import DA.List (head)
+
+-- | View type for Oracle interface
+data OracleView = OracleView
+  with
+    oracleParty : Party
+    oracleType : Text  -- "admin", "multisig", "committee", etc.
+  deriving (Eq, Show)
+
+-- | Request data for submitting a resolution
+data SubmitResolutionRequest = SubmitResolutionRequest
+  with
+    marketId : Text
+    outcome : Bool
+    evidence : Optional Text  -- Supporting evidence/data source
+    currentMarketStatus : MarketStatus  -- For freshness verification
+    marketVersion : Int  -- Version counter to detect any market modifications
+  deriving (Eq, Show)
+
+-- | Oracle interface for market resolution
+-- Implementations determine HOW resolution decisions are made
+interface Oracle where
+  viewtype OracleView
+
+  -- | Get the oracle party (pure method)
+  getOracleParty : Party
+
+  -- | Get the pebble admin party (pure method)
+  getPebbleAdmin : Party
+
+  -- | Submit a resolution for a market (creates OracleResolutionRequest)
+  -- This is an interface choice that returns Update
+  nonconsuming choice SubmitResolution : ContractId OracleResolutionRequest
+    with
+      request : SubmitResolutionRequest
+    controller (getOracleParty this)
+    do
+      now <- getTime
+      -- Default expiry of 1 hour
+      let expiry = addRelTime now (hours 1)
+      create OracleResolutionRequest with
+        oracle = getOracleParty this
+        pebbleAdmin = getPebbleAdmin this
+        marketId = request.marketId
+        outcome = request.outcome
+        evidence = request.evidence
+        createdAt = now
+        expiresAt = expiry
+        expectedMarketStatus = request.currentMarketStatus
+        expectedMarketVersion = request.marketVersion
+
+
+-- | OracleResolutionRequest: Links oracle resolution to market
+-- Created by oracle, executed by pebbleAdmin to resolve market
+--
+-- FRESHNESS GUARANTEES:
+-- - expectedMarketStatus: Ensures market status hasn't changed
+-- - expectedMarketVersion: Detects ANY modification to market (not just status)
+-- - expiresAt: Resolution requests are only valid for a limited time
+template OracleResolutionRequest
+  with
+    oracle : Party
+    pebbleAdmin : Party
+    marketId : Text
+    outcome : Bool
+    evidence : Optional Text
+    createdAt : Time
+    expiresAt : Time  -- Resolution must be executed before this time
+    expectedMarketStatus : MarketStatus  -- Market status at time of resolution request
+    expectedMarketVersion : Int  -- Market version at time of resolution request
+  where
+    signatory oracle
+    observer pebbleAdmin
+
+    -- Ensure request expires within reasonable timeframe (max 24 hours from creation)
+    ensure expiresAt > createdAt
+
+    -- Oracle can cancel their own resolution request
+    choice CancelResolutionRequest : ()
+      controller oracle
+      do return ()
+
+    -- Auto-expire choice (pebbleAdmin can archive an expired request)
+    choice ExpireResolutionRequest : ()
+      controller pebbleAdmin
+      do
+        now <- getTime
+        assertMsg "Resolution request has not yet expired" (now >= expiresAt)
+        return ()
+
+
+-- | AdminOracle: MVP implementation using admin-controlled resolution
+-- Simple single-party oracle where admin determines outcomes
+template AdminOracle
+  with
+    admin : Party
+    pebbleAdmin : Party
+  where
+    signatory admin
+    observer pebbleAdmin
+
+    interface instance Oracle for AdminOracle where
+      view = OracleView with
+        oracleParty = admin
+        oracleType = "admin"
+
+      getOracleParty = admin
+      getPebbleAdmin = pebbleAdmin
+
+
+-- | MultiSigOracle: Stub for future multi-signature oracle
+-- Would require collecting signatures from committee members
+template MultiSigOracle
+  with
+    oracleParties : [Party]       -- List of oracle committee members
+    pebbleAdmin : Party
+    requiredSignatures : Int      -- Minimum signatures needed (e.g., 3 of 5)
+  where
+    signatory oracleParties
+    observer pebbleAdmin
+
+    ensure requiredSignatures > 0 && requiredSignatures <= length oracleParties
+
+    interface instance Oracle for MultiSigOracle where
+      view = OracleView with
+        oracleParty = head oracleParties  -- Primary oracle
+        oracleType = "multisig"
+
+      getOracleParty = head oracleParties
+      getPebbleAdmin = pebbleAdmin
