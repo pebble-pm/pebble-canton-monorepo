@@ -99,7 +99,8 @@ positions.post("/:positionId/redeem", async (c) => {
     }
 
     // Check if this is a winning position
-    const isWinner = (market.outcome === true && position.side === "yes") || (market.outcome === false && position.side === "no");
+    const isWinner =
+        (market.outcome === true && position.side === "yes") || (market.outcome === false && position.side === "no");
 
     if (!isWinner) {
         throw new BadRequestError("This position did not win", "POSITION_NOT_WINNER");
@@ -107,7 +108,10 @@ positions.post("/:positionId/redeem", async (c) => {
 
     // Check for locked shares (cannot redeem locked positions)
     if (position.lockedQuantity.gt(0)) {
-        throw new BadRequestError("Cannot redeem position with locked shares. Cancel pending sell orders first.", "POSITION_LOCKED");
+        throw new BadRequestError(
+            "Cannot redeem position with locked shares. Cancel pending sell orders first.",
+            "POSITION_LOCKED",
+        );
     }
 
     // Calculate payout ($1 per winning share)
@@ -144,7 +148,10 @@ positions.post("/:positionId/redeem", async (c) => {
             transactionId = result.transactionId || transactionId;
         } catch (error) {
             console.error("[Positions] Failed to redeem position on Canton:", error);
-            throw new ServiceUnavailableError("Failed to redeem position on ledger. Please try again.", "CANTON_REDEEM_FAILED");
+            throw new ServiceUnavailableError(
+                "Failed to redeem position on ledger. Please try again.",
+                "CANTON_REDEEM_FAILED",
+            );
         }
     }
 
@@ -237,13 +244,23 @@ positions.post("/merge", async (c) => {
                     commandId: generateCommandId(`exec-merge-${marketId}`),
                     actAs: [ctx.config.parties.pebbleAdmin],
                     readAs: [ctx.config.parties.pebbleAdmin],
-                    commands: [exerciseCommand(Templates.PositionMerge, result.contractId, Choices.PositionMerge.ExecuteMerge, {})],
+                    commands: [
+                        exerciseCommand(
+                            Templates.PositionMerge,
+                            result.contractId,
+                            Choices.PositionMerge.ExecuteMerge,
+                            {},
+                        ),
+                    ],
                 });
                 transactionId = execResult.transactionId || transactionId;
             }
         } catch (error) {
             console.error("[Positions] Failed to merge positions on Canton:", error);
-            throw new ServiceUnavailableError("Failed to merge positions on ledger. Please try again.", "CANTON_MERGE_FAILED");
+            throw new ServiceUnavailableError(
+                "Failed to merge positions on ledger. Please try again.",
+                "CANTON_MERGE_FAILED",
+            );
         }
     }
 

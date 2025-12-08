@@ -11,7 +11,17 @@
 
 import Decimal from "decimal.js";
 import { testId } from "./test-env";
-import type { Order, OrderSide, OrderAction, OrderType, OrderStatus, Trade, Market, Position, TradingAccount } from "../../src/types";
+import type {
+    Order,
+    OrderSide,
+    OrderAction,
+    OrderType,
+    OrderStatus,
+    Trade,
+    Market,
+    Position,
+    TradingAccount,
+} from "../../src/types";
 
 /** Market status type */
 type MarketStatus = Market["status"];

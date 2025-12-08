@@ -13,7 +13,15 @@ import { CalendarIcon, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,7 +32,10 @@ import { useCreateMarket } from "@/api/admin";
 
 // Form validation schema
 const createMarketSchema = z.object({
-    question: z.string().min(10, "Question must be at least 10 characters").max(500, "Question must be less than 500 characters"),
+    question: z
+        .string()
+        .min(10, "Question must be at least 10 characters")
+        .max(500, "Question must be less than 500 characters"),
     description: z.string().max(2000, "Description must be less than 2000 characters").optional(),
     resolutionDate: z.date({ error: "Resolution date is required" }),
     resolutionTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Invalid time format (HH:MM)"),
@@ -83,14 +94,20 @@ export function CreateMarketDialog() {
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>Create New Market</DialogTitle>
-                    <DialogDescription>Create a new prediction market. Users will be able to trade on the outcome.</DialogDescription>
+                    <DialogDescription>
+                        Create a new prediction market. Users will be able to trade on the outcome.
+                    </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     {/* Question */}
                     <div className="space-y-2">
                         <Label htmlFor="question">Question</Label>
-                        <Input id="question" placeholder="Will Bitcoin reach $100,000 by end of 2025?" {...form.register("question")} />
+                        <Input
+                            id="question"
+                            placeholder="Will Bitcoin reach $100,000 by end of 2025?"
+                            {...form.register("question")}
+                        />
                         <p className="text-xs text-muted-foreground">A clear yes/no question for the market</p>
                         {form.formState.errors.question && (
                             <p className="text-xs text-destructive">{form.formState.errors.question.message}</p>
@@ -107,7 +124,9 @@ export function CreateMarketDialog() {
                             rows={3}
                             {...form.register("description")}
                         />
-                        <p className="text-xs text-muted-foreground">Provide additional details about resolution criteria</p>
+                        <p className="text-xs text-muted-foreground">
+                            Provide additional details about resolution criteria
+                        </p>
                         {form.formState.errors.description && (
                             <p className="text-xs text-destructive">{form.formState.errors.description.message}</p>
                         )}
@@ -126,7 +145,11 @@ export function CreateMarketDialog() {
                                     )}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {form.watch("resolutionDate") ? format(form.watch("resolutionDate"), "PPP") : <span>Pick a date</span>}
+                                    {form.watch("resolutionDate") ? (
+                                        format(form.watch("resolutionDate"), "PPP")
+                                    ) : (
+                                        <span>Pick a date</span>
+                                    )}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">

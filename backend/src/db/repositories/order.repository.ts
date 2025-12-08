@@ -38,7 +38,9 @@ export class OrderRepository extends BaseRepository {
      * Get orders by user
      */
     getByUser(userId: string): Order[] {
-        const rows = this.db.query("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC").all(userId) as OrderRow[];
+        const rows = this.db
+            .query("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC")
+            .all(userId) as OrderRow[];
 
         return rows.map((row) => this.rowToOrder(row));
     }
@@ -47,7 +49,9 @@ export class OrderRepository extends BaseRepository {
      * Get orders by market
      */
     getByMarket(marketId: string): Order[] {
-        const rows = this.db.query("SELECT * FROM orders WHERE market_id = ? ORDER BY created_at DESC").all(marketId) as OrderRow[];
+        const rows = this.db
+            .query("SELECT * FROM orders WHERE market_id = ? ORDER BY created_at DESC")
+            .all(marketId) as OrderRow[];
 
         return rows.map((row) => this.rowToOrder(row));
     }
@@ -92,7 +96,9 @@ export class OrderRepository extends BaseRepository {
      * Check for existing order by idempotency key
      */
     getByIdempotencyKey(userId: string, key: string): Order | null {
-        const row = this.db.query("SELECT * FROM orders WHERE user_id = ? AND idempotency_key = ?").get(userId, key) as OrderRow | null;
+        const row = this.db
+            .query("SELECT * FROM orders WHERE user_id = ? AND idempotency_key = ?")
+            .get(userId, key) as OrderRow | null;
 
         return row ? this.rowToOrder(row) : null;
     }
@@ -152,7 +158,11 @@ export class OrderRepository extends BaseRepository {
      * Update Canton lock transaction ID
      */
     updateCantonLockTx(orderId: string, txId: string): void {
-        this.db.run("UPDATE orders SET canton_lock_tx_id = ?, updated_at = ? WHERE order_id = ?", [txId, this.now(), orderId]);
+        this.db.run("UPDATE orders SET canton_lock_tx_id = ?, updated_at = ? WHERE order_id = ?", [
+            txId,
+            this.now(),
+            orderId,
+        ]);
     }
 
     /**

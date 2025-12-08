@@ -134,7 +134,9 @@ faucet.post("/request", async (c) => {
     }
 
     // Determine amount based on whether this is first request
-    const requestCount = ctx.db.db.query("SELECT COUNT(*) as count FROM faucet_requests WHERE user_id = ?").get(userId) as {
+    const requestCount = ctx.db.db
+        .query("SELECT COUNT(*) as count FROM faucet_requests WHERE user_id = ?")
+        .get(userId) as {
         count: number;
     };
 
@@ -154,10 +156,15 @@ faucet.post("/request", async (c) => {
                 actAs: [ctx.config.parties.pebbleAdmin],
                 readAs: [ctx.config.parties.pebbleAdmin],
                 commands: [
-                    exerciseCommand(Templates.TradingAccount, account.accountContractId, Choices.TradingAccount.CreditFromDeposit, {
-                        amount: depositAmount.toString(),
-                        depositId: `faucet-${transactionId}`,
-                    }),
+                    exerciseCommand(
+                        Templates.TradingAccount,
+                        account.accountContractId,
+                        Choices.TradingAccount.CreditFromDeposit,
+                        {
+                            amount: depositAmount.toString(),
+                            depositId: `faucet-${transactionId}`,
+                        },
+                    ),
                 ],
             });
             transactionId = result.transactionId || transactionId;
@@ -169,11 +176,16 @@ faucet.post("/request", async (c) => {
                     `[Faucet] Canton SUCCESS: txId=${transactionId.slice(0, 20)}..., newContractId=${newContractId.slice(0, 20)}...`,
                 );
             } else {
-                console.log(`[Faucet] Canton SUCCESS: txId=${transactionId.slice(0, 20)}... (no new contractId returned)`);
+                console.log(
+                    `[Faucet] Canton SUCCESS: txId=${transactionId.slice(0, 20)}... (no new contractId returned)`,
+                );
             }
         } catch (error) {
             console.error("[Faucet] Canton FAILED:", error instanceof Error ? error.message : error);
-            throw new ServiceUnavailableError("Failed to process faucet request on ledger. Please try again.", "CANTON_FAUCET_FAILED");
+            throw new ServiceUnavailableError(
+                "Failed to process faucet request on ledger. Please try again.",
+                "CANTON_FAUCET_FAILED",
+            );
         }
     } else {
         console.log(`[Faucet] Skipping Canton (offline mode), crediting off-chain only`);

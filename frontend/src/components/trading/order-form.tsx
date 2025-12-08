@@ -114,7 +114,10 @@ export function OrderForm({ marketId, yesPrice = 0.5, noPrice = 0.5 }: OrderForm
             {/* Buy/Sell Tabs */}
             <Tabs value={action} onValueChange={handleActionChange}>
                 <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="buy" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
+                    <TabsTrigger
+                        value="buy"
+                        className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                    >
                         Buy
                     </TabsTrigger>
                     <TabsTrigger value="sell" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
@@ -130,7 +133,12 @@ export function OrderForm({ marketId, yesPrice = 0.5, noPrice = 0.5 }: OrderForm
             </div>
 
             {/* Price Input */}
-            <PriceInput value={price} onChange={(v) => form.setValue("price", v)} disabled={placeOrder.isPending} label="Limit Price" />
+            <PriceInput
+                value={price}
+                onChange={(v) => form.setValue("price", v)}
+                disabled={placeOrder.isPending}
+                label="Limit Price"
+            />
 
             {/* Quantity Input */}
             <div className="space-y-2">
@@ -160,7 +168,9 @@ export function OrderForm({ marketId, yesPrice = 0.5, noPrice = 0.5 }: OrderForm
                     disabled={placeOrder.isPending}
                     className="font-mono"
                 />
-                {form.formState.errors.quantity && <p className="text-xs text-destructive">{form.formState.errors.quantity.message}</p>}
+                {form.formState.errors.quantity && (
+                    <p className="text-xs text-destructive">{form.formState.errors.quantity.message}</p>
+                )}
             </div>
 
             <Separator />

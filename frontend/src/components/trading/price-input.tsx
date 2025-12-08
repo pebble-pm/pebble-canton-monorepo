@@ -19,7 +19,14 @@ interface PriceInputProps {
     className?: string;
 }
 
-export function PriceInput({ value, onChange, disabled = false, label = "Price", showSlider = true, className }: PriceInputProps) {
+export function PriceInput({
+    value,
+    onChange,
+    disabled = false,
+    label = "Price",
+    showSlider = true,
+    className,
+}: PriceInputProps) {
     // Convert price (0.01-0.99) to cents display (1-99)
     const centsValue = Math.round(value * 100);
 

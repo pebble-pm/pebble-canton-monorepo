@@ -92,7 +92,9 @@ export class MarketProjectionService extends BaseProjectionService {
         version: number,
     ): Promise<void> {
         // Check if market exists (upsert pattern using market_id as key)
-        const existing = this.db.query("SELECT market_id FROM markets WHERE market_id = ?").get(marketId) as { market_id: string } | null;
+        const existing = this.db.query("SELECT market_id FROM markets WHERE market_id = ?").get(marketId) as {
+            market_id: string;
+        } | null;
 
         if (existing) {
             // Update existing market with new contract version

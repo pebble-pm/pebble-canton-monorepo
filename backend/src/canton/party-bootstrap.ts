@@ -93,7 +93,13 @@ export async function bootstrapTestParties(
 
                 // Party exists on Canton but no off-chain account - create one
                 logApp("PartyBootstrap", "Party exists, creating off-chain account", { party: partyHint });
-                await createAccountForParty(canton, accountRepository, existingPartyId, config.pebbleAdminParty, initialBalance);
+                await createAccountForParty(
+                    canton,
+                    accountRepository,
+                    existingPartyId,
+                    config.pebbleAdminParty,
+                    initialBalance,
+                );
                 result.partiesCreated.push(partyHint);
                 continue;
             }

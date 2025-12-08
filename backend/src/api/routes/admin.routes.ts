@@ -64,30 +64,42 @@ admin.get("/stats", async (c) => {
 
     // Get counts
     const marketCount = ctx.db.db.query("SELECT COUNT(*) as count FROM markets").get() as { count: number };
-    const openMarketCount = ctx.db.db.query("SELECT COUNT(*) as count FROM markets WHERE status = 'open'").get() as { count: number };
+    const openMarketCount = ctx.db.db.query("SELECT COUNT(*) as count FROM markets WHERE status = 'open'").get() as {
+        count: number;
+    };
     const userCount = ctx.db.db.query("SELECT COUNT(*) as count FROM accounts").get() as { count: number };
     const orderCount = ctx.db.db.query("SELECT COUNT(*) as count FROM orders").get() as { count: number };
     const tradeCount = ctx.db.db.query("SELECT COUNT(*) as count FROM trades").get() as { count: number };
 
     // Get total volume
-    const volumeResult = ctx.db.db.query("SELECT SUM(total_volume) as total FROM markets").get() as { total: number | null };
+    const volumeResult = ctx.db.db.query("SELECT SUM(total_volume) as total FROM markets").get() as {
+        total: number | null;
+    };
     const totalVolume = volumeResult.total || 0;
 
     // Get total balances
-    const balanceResult = ctx.db.db.query("SELECT SUM(available_balance + locked_balance) as total FROM accounts").get() as {
+    const balanceResult = ctx.db.db
+        .query("SELECT SUM(available_balance + locked_balance) as total FROM accounts")
+        .get() as {
         total: number | null;
     };
     const totalBalances = balanceResult.total || 0;
 
     // Get pending trades
-    const pendingTrades = ctx.db.db.query("SELECT COUNT(*) as count FROM trades WHERE settlement_status = 'pending'").get() as {
+    const pendingTrades = ctx.db.db
+        .query("SELECT COUNT(*) as count FROM trades WHERE settlement_status = 'pending'")
+        .get() as {
         count: number;
     };
 
     // Get recent activity (last 24h)
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const recentOrders = ctx.db.db.query("SELECT COUNT(*) as count FROM orders WHERE created_at > ?").get(yesterday) as { count: number };
-    const recentTrades = ctx.db.db.query("SELECT COUNT(*) as count FROM trades WHERE created_at > ?").get(yesterday) as { count: number };
+    const recentOrders = ctx.db.db
+        .query("SELECT COUNT(*) as count FROM orders WHERE created_at > ?")
+        .get(yesterday) as { count: number };
+    const recentTrades = ctx.db.db
+        .query("SELECT COUNT(*) as count FROM trades WHERE created_at > ?")
+        .get(yesterday) as { count: number };
 
     return c.json({
         markets: {
@@ -133,7 +145,9 @@ admin.get("/users", async (c) => {
             .get(acc.userId) as { count: number };
 
         // Get order count for this user
-        const orderCount = ctx.db.db.query("SELECT COUNT(*) as count FROM orders WHERE user_id = ?").get(acc.userId) as { count: number };
+        const orderCount = ctx.db.db
+            .query("SELECT COUNT(*) as count FROM orders WHERE user_id = ?")
+            .get(acc.userId) as { count: number };
 
         // Get faucet usage
         const faucetResult = ctx.db.db
@@ -223,7 +237,10 @@ admin.post("/markets", async (c) => {
             console.log(`[Admin] Created market on Canton: ${contractId?.slice(0, 40)}...`);
         } catch (error) {
             console.error("[Admin] Failed to create market on Canton:", error);
-            throw new ServiceUnavailableError("Failed to create market on ledger. Please try again.", "CANTON_CREATE_MARKET_FAILED");
+            throw new ServiceUnavailableError(
+                "Failed to create market on ledger. Please try again.",
+                "CANTON_CREATE_MARKET_FAILED",
+            );
         }
     }
 
@@ -292,10 +309,15 @@ admin.post("/markets/:id/close", async (c) => {
             });
             // CloseMarket creates a new contract with updated status - capture the new contract ID
             newContractId = result.contractId;
-            console.log(`[Admin] Closed market on Canton: ${marketId}, new contractId: ${newContractId?.slice(0, 40)}...`);
+            console.log(
+                `[Admin] Closed market on Canton: ${marketId}, new contractId: ${newContractId?.slice(0, 40)}...`,
+            );
         } catch (error) {
             console.error("[Admin] Failed to close market on Canton:", error);
-            throw new ServiceUnavailableError("Failed to close market on ledger. Please try again.", "CANTON_CLOSE_MARKET_FAILED");
+            throw new ServiceUnavailableError(
+                "Failed to close market on ledger. Please try again.",
+                "CANTON_CLOSE_MARKET_FAILED",
+            );
         }
     }
 
@@ -369,7 +391,10 @@ admin.post("/markets/:id/resolve", async (c) => {
             }
         } catch (error) {
             console.error("[Admin] Failed to resolve market on Canton:", error);
-            throw new ServiceUnavailableError("Failed to resolve market on ledger. Please try again.", "CANTON_RESOLVE_MARKET_FAILED");
+            throw new ServiceUnavailableError(
+                "Failed to resolve market on ledger. Please try again.",
+                "CANTON_RESOLVE_MARKET_FAILED",
+            );
         }
     }
 

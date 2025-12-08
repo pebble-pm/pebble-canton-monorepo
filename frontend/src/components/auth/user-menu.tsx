@@ -62,7 +62,9 @@ export function UserMenu() {
                             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                         >
                             <Avatar className="h-8 w-8 rounded-lg">
-                                <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">{initials}</AvatarFallback>
+                                <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
+                                    {initials}
+                                </AvatarFallback>
                             </Avatar>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-semibold">{displayName}</span>
@@ -80,7 +82,9 @@ export function UserMenu() {
                         <DropdownMenuLabel className="p-0 font-normal">
                             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                                 <Avatar className="h-8 w-8 rounded-lg">
-                                    <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">{initials}</AvatarFallback>
+                                    <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
+                                        {initials}
+                                    </AvatarFallback>
                                 </Avatar>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-semibold">{displayName}</span>
@@ -96,7 +100,10 @@ export function UserMenu() {
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
+                        <DropdownMenuItem
+                            onClick={logout}
+                            className="cursor-pointer text-destructive focus:text-destructive"
+                        >
                             <LogOut className="mr-2 h-4 w-4" />
                             Log out
                         </DropdownMenuItem>

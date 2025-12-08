@@ -85,7 +85,11 @@ export function BalanceCard() {
                         disabled={faucetLoading || faucetRequest.isPending || !faucetStatus?.canRequest}
                     >
                         <Droplets className="mr-2 h-4 w-4" />
-                        {faucetRequest.isPending ? "Requesting..." : !faucetStatus?.canRequest ? "Cooldown..." : "Get Test Tokens"}
+                        {faucetRequest.isPending
+                            ? "Requesting..."
+                            : !faucetStatus?.canRequest
+                              ? "Cooldown..."
+                              : "Get Test Tokens"}
                     </Button>
                 </div>
             </CardContent>

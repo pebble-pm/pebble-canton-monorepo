@@ -326,7 +326,9 @@ describe("SettlementService", () => {
             };
             settlementRepo._batches.set(batch.batchId, batch);
 
-            await expect(settlementService.retryBatch("test-batch")).rejects.toThrow("Cannot retry batch with status completed");
+            await expect(settlementService.retryBatch("test-batch")).rejects.toThrow(
+                "Cannot retry batch with status completed",
+            );
         });
 
         it("should re-queue trades from failed batch", async () => {

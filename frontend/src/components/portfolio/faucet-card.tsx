@@ -39,7 +39,10 @@ export function FaucetCard() {
     const cooldownPercent = cooldownMs > 0 ? Math.min(100, (cooldownMs / (cooldownMinutes * 60 * 1000)) * 100) : 0;
 
     // Determine the amount that will be given
-    const requestAmount = status?.requestCount === 0 ? (status?.config?.initialAmount ?? 1000) : (status?.config?.subsequentAmount ?? 100);
+    const requestAmount =
+        status?.requestCount === 0
+            ? (status?.config?.initialAmount ?? 1000)
+            : (status?.config?.subsequentAmount ?? 100);
 
     return (
         <Card className="max-w-lg">
@@ -73,7 +76,9 @@ export function FaucetCard() {
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Timer className="h-4 w-4" />
                             <span>
-                                Cooldown: {cooldownSeconds > 60 ? `${Math.ceil(cooldownSeconds / 60)}m` : `${cooldownSeconds}s`} remaining
+                                Cooldown:{" "}
+                                {cooldownSeconds > 60 ? `${Math.ceil(cooldownSeconds / 60)}m` : `${cooldownSeconds}s`}{" "}
+                                remaining
                             </span>
                         </div>
                         <Progress value={100 - cooldownPercent} className="h-2" />
@@ -103,7 +108,8 @@ export function FaucetCard() {
 
                 {/* Help text */}
                 <p className="text-xs text-muted-foreground text-center">
-                    Faucet tokens are for testing only and have no real value. Cooldown: {cooldownMinutes} minutes between requests.
+                    Faucet tokens are for testing only and have no real value. Cooldown: {cooldownMinutes} minutes
+                    between requests.
                 </p>
             </CardContent>
         </Card>

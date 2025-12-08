@@ -32,7 +32,10 @@ function createMockOrderRepo() {
         getByUser: mock((userId: string) => Array.from(orders.values()).filter((o) => o.userId === userId)),
         getOpenOrdersByUser: mock((userId: string, marketId?: string) =>
             Array.from(orders.values()).filter(
-                (o) => o.userId === userId && (o.status === "open" || o.status === "partial") && (!marketId || o.marketId === marketId),
+                (o) =>
+                    o.userId === userId &&
+                    (o.status === "open" || o.status === "partial") &&
+                    (!marketId || o.marketId === marketId),
             ),
         ),
         getByIdempotencyKey: mock((_userId: string, _key: string) => null as Order | null),
@@ -113,7 +116,12 @@ function createMockPositionRepo() {
             }
         }),
         // Test helper
-        _set: (userId: string, marketId: string, side: "yes" | "no", position: ReturnType<typeof createPositionProjection>) => {
+        _set: (
+            userId: string,
+            marketId: string,
+            side: "yes" | "no",
+            position: ReturnType<typeof createPositionProjection>,
+        ) => {
             const key = `${userId}:${marketId}:${side}`;
             positions.set(key, position);
         },

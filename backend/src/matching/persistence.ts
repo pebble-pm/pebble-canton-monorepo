@@ -66,7 +66,9 @@ export class OrderbookPersistence {
         const ordersWithPendingSettlements = this.getOrdersWithPendingSettlements();
 
         console.log(`[Orderbook Rehydration] Found ${openOrders.length} open orders`);
-        console.log(`[Orderbook Rehydration] ${ordersWithPendingSettlements.size} orders have pending settlements (excluded)`);
+        console.log(
+            `[Orderbook Rehydration] ${ordersWithPendingSettlements.size} orders have pending settlements (excluded)`,
+        );
 
         // Track excluded orders for the result
         const excludedOrders: Order[] = [];

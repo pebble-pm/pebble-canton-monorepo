@@ -21,7 +21,15 @@ import { exerciseCommand, generateCommandId } from "../canton/client";
 import { Templates, Choices } from "../canton/templates";
 import { MatchingEngine, OrderbookPersistence } from "../matching";
 import type { MatchResult } from "../matching";
-import type { Order, PlaceOrderRequest, PlaceOrderResponse, TradeExecution, TradingAccount, Position, Market } from "../types";
+import type {
+    Order,
+    PlaceOrderRequest,
+    PlaceOrderResponse,
+    TradeExecution,
+    TradingAccount,
+    Position,
+    Market,
+} from "../types";
 import type { OrderRepository } from "../db/repositories/order.repository";
 import type { TradeRepository } from "../db/repositories/trade.repository";
 import type { AccountRepository } from "../db/repositories/account.repository";
@@ -294,7 +302,11 @@ export class OrderService {
                 const account = this.accountRepo.getById(userId);
                 if (account?.accountContractId) {
                     try {
-                        const newCid = await this.unlockFundsOnCanton(orderId, remainingLocked, account.accountContractId);
+                        const newCid = await this.unlockFundsOnCanton(
+                            orderId,
+                            remainingLocked,
+                            account.accountContractId,
+                        );
                         this.accountRepo.unlockFunds(userId, remainingLocked);
                         // Update contract ID in database (Canton creates new contract after each exercise)
                         if (newCid && newCid !== account.accountContractId) {
@@ -653,7 +665,11 @@ export class OrderService {
      * Unlock funds on Canton
      * Returns the new contract ID after the exercise
      */
-    private async unlockFundsOnCanton(orderId: string, amount: Decimal, accountCid: string): Promise<string | undefined> {
+    private async unlockFundsOnCanton(
+        orderId: string,
+        amount: Decimal,
+        accountCid: string,
+    ): Promise<string | undefined> {
         if (!this.cantonClient) {
             return undefined;
         }

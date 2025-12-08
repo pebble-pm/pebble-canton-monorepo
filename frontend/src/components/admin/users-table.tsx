@@ -52,7 +52,9 @@ export function UsersTable() {
                                         <TableCell>
                                             <div>
                                                 <div className="font-medium">{user.displayName}</div>
-                                                <div className="text-xs text-muted-foreground truncate max-w-[200px]">{user.partyId}</div>
+                                                <div className="text-xs text-muted-foreground truncate max-w-[200px]">
+                                                    {user.partyId}
+                                                </div>
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -68,8 +70,12 @@ export function UsersTable() {
                                                 </Badge>
                                             )}
                                         </TableCell>
-                                        <TableCell className="text-right font-mono">{formatBalance(user.availableBalance)}</TableCell>
-                                        <TableCell className="text-right font-mono">{formatBalance(user.lockedBalance)}</TableCell>
+                                        <TableCell className="text-right font-mono">
+                                            {formatBalance(user.availableBalance)}
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono">
+                                            {formatBalance(user.lockedBalance)}
+                                        </TableCell>
                                         <TableCell className="text-right font-mono font-medium">
                                             {formatBalance(user.totalBalance)}
                                         </TableCell>
@@ -78,7 +84,9 @@ export function UsersTable() {
                                         <TableCell className="text-right">
                                             <div className="text-sm">
                                                 <div>{user.faucetRequests} requests</div>
-                                                <div className="text-xs text-muted-foreground">{formatBalance(user.faucetTotal)}</div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {formatBalance(user.faucetTotal)}
+                                                </div>
                                             </div>
                                         </TableCell>
                                     </TableRow>

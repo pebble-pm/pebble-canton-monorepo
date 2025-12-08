@@ -171,7 +171,9 @@ export class PositionProjectionService extends BaseProjectionService {
      * Get position by contract ID
      */
     getByContractId(contractId: string): PositionProjection | null {
-        const row = this.db.query("SELECT * FROM positions WHERE position_id = ?").get(contractId) as PositionRow | null;
+        const row = this.db
+            .query("SELECT * FROM positions WHERE position_id = ?")
+            .get(contractId) as PositionRow | null;
 
         if (!row) return null;
 
@@ -182,7 +184,9 @@ export class PositionProjectionService extends BaseProjectionService {
      * Get all active positions for a user
      */
     getByUser(userId: string): PositionProjection[] {
-        const rows = this.db.query("SELECT * FROM positions WHERE user_id = ? AND is_archived = 0").all(userId) as PositionRow[];
+        const rows = this.db
+            .query("SELECT * FROM positions WHERE user_id = ? AND is_archived = 0")
+            .all(userId) as PositionRow[];
 
         return rows.map((row) => this.rowToProjection(row));
     }

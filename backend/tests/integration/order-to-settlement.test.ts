@@ -34,7 +34,10 @@ class InMemoryOrderRepo {
 
     getOpenOrdersByUser(userId: string, marketId?: string): Order[] {
         return Array.from(this.orders.values()).filter(
-            (o) => o.userId === userId && (o.status === "open" || o.status === "partial") && (!marketId || o.marketId === marketId),
+            (o) =>
+                o.userId === userId &&
+                (o.status === "open" || o.status === "partial") &&
+                (!marketId || o.marketId === marketId),
         );
     }
 
@@ -165,7 +168,12 @@ class InMemoryPositionRepo {
         }
     }
 
-    set(userId: string, marketId: string, side: "yes" | "no", position: ReturnType<typeof createPositionProjection>): void {
+    set(
+        userId: string,
+        marketId: string,
+        side: "yes" | "no",
+        position: ReturnType<typeof createPositionProjection>,
+    ): void {
         this.positions.set(this.key(userId, marketId, side), position);
     }
 
@@ -243,7 +251,13 @@ class InMemorySettlementRepo {
         }
     }
 
-    createEvent(event: { contractId: string; settlementId: string; transactionId?: string; status: string; timestamp: Date }): void {
+    createEvent(event: {
+        contractId: string;
+        settlementId: string;
+        transactionId?: string;
+        status: string;
+        timestamp: Date;
+    }): void {
         this.events.push({
             ...event,
             transactionId: event.transactionId ?? "",

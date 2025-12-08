@@ -21,7 +21,11 @@ const buttonGroupVariants = cva(
     },
 );
 
-function ButtonGroup({ className, orientation, ...props }: React.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>) {
+function ButtonGroup({
+    className,
+    orientation,
+    ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>) {
     return (
         <div
             role="group"
@@ -53,7 +57,11 @@ function ButtonGroupText({
     );
 }
 
-function ButtonGroupSeparator({ className, orientation = "vertical", ...props }: React.ComponentProps<typeof Separator>) {
+function ButtonGroupSeparator({
+    className,
+    orientation = "vertical",
+    ...props
+}: React.ComponentProps<typeof Separator>) {
     return (
         <Separator
             data-slot="button-group-separator"

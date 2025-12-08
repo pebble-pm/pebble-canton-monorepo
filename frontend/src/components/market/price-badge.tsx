@@ -31,7 +31,9 @@ export function PriceBadge({ side, price, size = "md", showLabel = true, classNa
             className={cn(
                 "font-mono tabular-nums",
                 sizeClasses[size],
-                side === "yes" ? "border-green-500/50 bg-green-500/10 text-green-500" : "border-red-500/50 bg-red-500/10 text-red-500",
+                side === "yes"
+                    ? "border-green-500/50 bg-green-500/10 text-green-500"
+                    : "border-red-500/50 bg-red-500/10 text-red-500",
                 className,
             )}
         >

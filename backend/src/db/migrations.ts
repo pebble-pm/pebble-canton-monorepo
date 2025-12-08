@@ -34,7 +34,9 @@ const migrations: Migration[] = [
 export function runMigrations(db: BunDatabase): void {
     const currentVersion = getSchemaVersion(db);
 
-    const pendingMigrations = migrations.filter((m) => m.version > currentVersion).sort((a, b) => a.version - b.version);
+    const pendingMigrations = migrations
+        .filter((m) => m.version > currentVersion)
+        .sort((a, b) => a.version - b.version);
 
     if (pendingMigrations.length === 0) {
         console.log("Database schema is up to date");

@@ -126,7 +126,11 @@ function PositionRow({ position, marketQuestion, marketStatus, marketOutcome }: 
     return (
         <TableRow>
             <TableCell>
-                <Link to="/markets/$marketId" params={{ marketId: position.marketId }} className="flex items-center gap-1 hover:underline">
+                <Link
+                    to="/markets/$marketId"
+                    params={{ marketId: position.marketId }}
+                    className="flex items-center gap-1 hover:underline"
+                >
                     <span className="max-w-[200px] truncate">{marketQuestion}</span>
                     <ExternalLink className="h-3 w-3 opacity-50" />
                 </Link>
@@ -134,7 +138,11 @@ function PositionRow({ position, marketQuestion, marketStatus, marketOutcome }: 
             <TableCell>
                 <Badge
                     variant="outline"
-                    className={position.side === "yes" ? "border-green-500/50 text-green-500" : "border-red-500/50 text-red-500"}
+                    className={
+                        position.side === "yes"
+                            ? "border-green-500/50 text-green-500"
+                            : "border-red-500/50 text-red-500"
+                    }
                 >
                     {position.side.toUpperCase()}
                 </Badge>

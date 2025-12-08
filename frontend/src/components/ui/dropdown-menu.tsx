@@ -16,7 +16,11 @@ function DropdownMenuTrigger({ ...props }: React.ComponentProps<typeof DropdownM
     return <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
 }
 
-function DropdownMenuContent({ className, sideOffset = 4, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+function DropdownMenuContent({
+    className,
+    sideOffset = 4,
+    ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
     return (
         <DropdownMenuPrimitive.Portal>
             <DropdownMenuPrimitive.Content
@@ -89,7 +93,11 @@ function DropdownMenuRadioGroup({ ...props }: React.ComponentProps<typeof Dropdo
     return <DropdownMenuPrimitive.RadioGroup data-slot="dropdown-menu-radio-group" {...props} />;
 }
 
-function DropdownMenuRadioItem({ className, children, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
+function DropdownMenuRadioItem({
+    className,
+    children,
+    ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
     return (
         <DropdownMenuPrimitive.RadioItem
             data-slot="dropdown-menu-radio-item"
@@ -174,7 +182,10 @@ function DropdownMenuSubTrigger({
     );
 }
 
-function DropdownMenuSubContent({ className, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
+function DropdownMenuSubContent({
+    className,
+    ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
     return (
         <DropdownMenuPrimitive.SubContent
             data-slot="dropdown-menu-sub-content"

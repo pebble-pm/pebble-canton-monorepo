@@ -34,7 +34,9 @@ export function MarketManagement() {
             </CardHeader>
             <CardContent>
                 {!markets || markets.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">No markets yet. Create your first market to get started.</div>
+                    <div className="text-center py-8 text-muted-foreground">
+                        No markets yet. Create your first market to get started.
+                    </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <Table>
@@ -63,13 +65,20 @@ export function MarketManagement() {
                                         <TableCell>
                                             <StatusBadge status={market.status} outcome={market.outcome} />
                                         </TableCell>
-                                        <TableCell className="text-right font-mono">{formatVolume(market.totalVolume)}</TableCell>
+                                        <TableCell className="text-right font-mono">
+                                            {formatVolume(market.totalVolume)}
+                                        </TableCell>
                                         <TableCell>{formatDate(market.resolutionTime)}</TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
-                                                {market.status === "open" && <CloseMarketButton marketId={market.marketId} />}
+                                                {market.status === "open" && (
+                                                    <CloseMarketButton marketId={market.marketId} />
+                                                )}
                                                 {(market.status === "open" || market.status === "closed") && (
-                                                    <ResolveMarketDialog marketId={market.marketId} question={market.question} />
+                                                    <ResolveMarketDialog
+                                                        marketId={market.marketId}
+                                                        question={market.question}
+                                                    />
                                                 )}
                                             </div>
                                         </TableCell>

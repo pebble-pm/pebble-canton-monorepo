@@ -93,7 +93,11 @@ export function SidebarNav() {
                                 <SidebarMenu>
                                     {portfolioNavItems.map((item) => (
                                         <SidebarMenuItem key={item.title}>
-                                            <SidebarMenuButton asChild isActive={currentPath === item.url} tooltip={item.title}>
+                                            <SidebarMenuButton
+                                                asChild
+                                                isActive={currentPath === item.url}
+                                                tooltip={item.title}
+                                            >
                                                 <Link to={item.url}>
                                                     <item.icon className="h-4 w-4" />
                                                     <span>{item.title}</span>
@@ -116,7 +120,11 @@ export function SidebarNav() {
                             <SidebarGroupContent>
                                 <SidebarMenu>
                                     <SidebarMenuItem>
-                                        <SidebarMenuButton asChild isActive={currentPath === "/faucet"} tooltip="Faucet">
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={currentPath === "/faucet"}
+                                            tooltip="Faucet"
+                                        >
                                             <Link to="/faucet">
                                                 <Droplets className="h-4 w-4" />
                                                 <span>Faucet</span>
@@ -138,7 +146,11 @@ export function SidebarNav() {
                             <SidebarGroupContent>
                                 <SidebarMenu>
                                     <SidebarMenuItem>
-                                        <SidebarMenuButton asChild isActive={currentPath === "/admin"} tooltip="Admin Panel">
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={currentPath === "/admin"}
+                                            tooltip="Admin Panel"
+                                        >
                                             <Link to="/admin">
                                                 <Shield className="h-4 w-4" />
                                                 <span>Admin Panel</span>

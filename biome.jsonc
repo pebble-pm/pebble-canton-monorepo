@@ -2,7 +2,8 @@
   "formatter": {
     "indentStyle": "space",
     "indentWidth": 4,
-    "lineWidth": 140
+    "lineWidth": 120,
+    "includes": ["**", "!frontend/src/routeTree.gen.ts"]
   },
   "javascript": {
     "formatter": {

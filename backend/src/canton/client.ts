@@ -89,7 +89,10 @@ export class CantonJsonClient implements CantonLedgerClient {
         if (!response.ok) {
             const error = await response.json().catch(() => ({ message: response.statusText }));
             logLedgerError(cmdInfo.action, cmdInfo.template, error, logContext);
-            throw new CommandRejectedError(`Canton command failed: ${JSON.stringify(error)}`, error as Record<string, unknown>);
+            throw new CommandRejectedError(
+                `Canton command failed: ${JSON.stringify(error)}`,
+                error as Record<string, unknown>,
+            );
         }
 
         const result = (await response.json()) as {
@@ -467,7 +470,10 @@ export class CantonJsonClient implements CantonLedgerClient {
         };
 
         ws.onerror = (event: Event) => {
-            wsError = new CantonError(`WebSocket error: ${(event as ErrorEvent).message || "unknown"}`, "STREAM_FAILED");
+            wsError = new CantonError(
+                `WebSocket error: ${(event as ErrorEvent).message || "unknown"}`,
+                "STREAM_FAILED",
+            );
             if (resolveNext) {
                 // Don't reject, just close the iterator
                 wsClosed = true;
@@ -538,7 +544,11 @@ export class CantonJsonClient implements CantonLedgerClient {
             createArguments: e.created?.createArguments,
             // Canton 3.4 uses witnessParties instead of stakeholders
             stakeholders:
-                e.created?.stakeholders || e.created?.witnessParties || e.archived?.stakeholders || e.archived?.witnessParties || [],
+                e.created?.stakeholders ||
+                e.created?.witnessParties ||
+                e.archived?.stakeholders ||
+                e.archived?.witnessParties ||
+                [],
         }));
     }
 
@@ -617,7 +627,10 @@ export class CantonJsonClient implements CantonLedgerClient {
                     isDeactivated: false,
                     identityProviderId: "",
                 },
-                rights: [{ kind: { CanActAs: { value: { party: partyId } } } }, { kind: { CanReadAs: { value: { party: partyId } } } }],
+                rights: [
+                    { kind: { CanActAs: { value: { party: partyId } } } },
+                    { kind: { CanReadAs: { value: { party: partyId } } } },
+                ],
             }),
         });
 
@@ -632,7 +645,10 @@ export class CantonJsonClient implements CantonLedgerClient {
                 method: "POST",
                 headers: this.headers,
                 body: JSON.stringify({
-                    rights: [{ kind: { CanActAs: { value: { party: partyId } } } }, { kind: { CanReadAs: { value: { party: partyId } } } }],
+                    rights: [
+                        { kind: { CanActAs: { value: { party: partyId } } } },
+                        { kind: { CanReadAs: { value: { party: partyId } } } },
+                    ],
                 }),
             });
 

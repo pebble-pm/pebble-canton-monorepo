@@ -100,7 +100,10 @@ export class LedgerEventProcessor {
                     await this.sleep(this.reconnectDelay);
 
                     // Exponential backoff
-                    this.reconnectDelay = Math.min(this.reconnectDelay * this.config.reconnectMultiplier, this.config.maxReconnectDelayMs);
+                    this.reconnectDelay = Math.min(
+                        this.reconnectDelay * this.config.reconnectMultiplier,
+                        this.config.maxReconnectDelayMs,
+                    );
                     this.reconnectAttempts++;
                 }
             }

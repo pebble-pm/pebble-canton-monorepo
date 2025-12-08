@@ -34,7 +34,10 @@ class InMemoryOrderRepo {
 
     getOpenOrdersByUser(userId: string, marketId?: string): Order[] {
         return Array.from(this.orders.values()).filter(
-            (o) => o.userId === userId && (o.status === "open" || o.status === "partial") && (!marketId || o.marketId === marketId),
+            (o) =>
+                o.userId === userId &&
+                (o.status === "open" || o.status === "partial") &&
+                (!marketId || o.marketId === marketId),
         );
     }
 
@@ -187,7 +190,13 @@ class InMemoryPositionRepo {
         return Array.from(this.positions.values()).filter((p) => p.marketId === marketId);
     }
 
-    upsertPosition(userId: string, marketId: string, side: "yes" | "no", quantity: Decimal, avgCostBasis: Decimal): void {
+    upsertPosition(
+        userId: string,
+        marketId: string,
+        side: "yes" | "no",
+        quantity: Decimal,
+        avgCostBasis: Decimal,
+    ): void {
         const key = this.key(userId, marketId, side);
         const existing = this.positions.get(key);
         if (existing) {
@@ -245,7 +254,12 @@ class InMemoryPositionRepo {
         }
     }
 
-    set(userId: string, marketId: string, side: "yes" | "no", position: ReturnType<typeof createPositionProjection>): void {
+    set(
+        userId: string,
+        marketId: string,
+        side: "yes" | "no",
+        position: ReturnType<typeof createPositionProjection>,
+    ): void {
         this.positions.set(this.key(userId, marketId, side), position);
     }
 
@@ -339,7 +353,13 @@ class InMemorySettlementRepo {
         }
     }
 
-    createEvent(event: { contractId: string; settlementId: string; transactionId?: string; status: string; timestamp: Date }): void {
+    createEvent(event: {
+        contractId: string;
+        settlementId: string;
+        transactionId?: string;
+        status: string;
+        timestamp: Date;
+    }): void {
         this.events.push({
             ...event,
             transactionId: event.transactionId ?? "",
@@ -692,7 +712,9 @@ describe("Market Resolution Integration", () => {
 
             // Calculate redemption payout
             const market = marketRepo.getById(marketId)!;
-            const isWinner = (market.outcome === true && position.side === "yes") || (market.outcome === false && position.side === "no");
+            const isWinner =
+                (market.outcome === true && position.side === "yes") ||
+                (market.outcome === false && position.side === "no");
 
             expect(isWinner).toBe(true);
 
@@ -722,7 +744,9 @@ describe("Market Resolution Integration", () => {
             positionRepo.set(bob, marketId, "no", position);
 
             const market = marketRepo.getById(marketId)!;
-            const isWinner = (market.outcome === true && position.side === "yes") || (market.outcome === false && position.side === "no");
+            const isWinner =
+                (market.outcome === true && position.side === "yes") ||
+                (market.outcome === false && position.side === "no");
 
             expect(isWinner).toBe(false);
 

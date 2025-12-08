@@ -78,7 +78,9 @@ export class SettlementService {
         // Start the batch processing loop
         this.startBatchLoop();
 
-        console.log(`[SettlementService] Initialized (interval: ${this.batchIntervalMs}ms, maxBatch: ${this.maxBatchSize})`);
+        console.log(
+            `[SettlementService] Initialized (interval: ${this.batchIntervalMs}ms, maxBatch: ${this.maxBatchSize})`,
+        );
     }
 
     /**
@@ -308,7 +310,11 @@ export class SettlementService {
             // Get seller's locked position quantity for ShareTrade
             let sellerPositionLockedQuantity: string | null = null;
             if (trade.tradeType === "share_trade") {
-                const sellerPosition = this.positionRepo.getByUserMarketSide(trade.sellerId, trade.marketId, trade.side);
+                const sellerPosition = this.positionRepo.getByUserMarketSide(
+                    trade.sellerId,
+                    trade.marketId,
+                    trade.side,
+                );
                 if (sellerPosition) {
                     sellerPositionLockedQuantity = sellerPosition.lockedQuantity.toString();
                 }
@@ -372,7 +378,11 @@ export class SettlementService {
     /**
      * Buyer accepts proposals -> creates SettlementProposalAccepted
      */
-    private async acceptBuyerProposals(proposalCids: Map<string, string>, trades: Trade[], batchId: string): Promise<Map<string, string>> {
+    private async acceptBuyerProposals(
+        proposalCids: Map<string, string>,
+        trades: Trade[],
+        batchId: string,
+    ): Promise<Map<string, string>> {
         const acceptedCids = new Map<string, string>();
 
         if (!this.cantonClient) {
@@ -392,7 +402,14 @@ export class SettlementService {
                     commandId: generateCommandId(`buyer-accept-${batchId}-${trade.tradeId}`),
                     actAs: [trade.buyerId, this.config.pebbleAdminParty],
                     readAs: [this.config.pebbleAdminParty],
-                    commands: [exerciseCommand(Templates.SettlementProposal, proposalCid, Choices.SettlementProposal.BuyerAccept, {})],
+                    commands: [
+                        exerciseCommand(
+                            Templates.SettlementProposal,
+                            proposalCid,
+                            Choices.SettlementProposal.BuyerAccept,
+                            {},
+                        ),
+                    ],
                 });
 
                 const acceptedCid = result.contractId;
@@ -424,7 +441,11 @@ export class SettlementService {
     /**
      * Seller accepts proposals -> creates Settlement contracts
      */
-    private async acceptSellerProposals(acceptedCids: Map<string, string>, trades: Trade[], batchId: string): Promise<Map<string, string>> {
+    private async acceptSellerProposals(
+        acceptedCids: Map<string, string>,
+        trades: Trade[],
+        batchId: string,
+    ): Promise<Map<string, string>> {
         const settlementCids = new Map<string, string>();
 
         if (!this.cantonClient) {
@@ -487,7 +508,11 @@ export class SettlementService {
     /**
      * Execute settlements with round-based grouping to avoid UTXO contention
      */
-    private async executeSettlements(settlementCids: Map<string, string>, trades: Trade[], batchId: string): Promise<string> {
+    private async executeSettlements(
+        settlementCids: Map<string, string>,
+        trades: Trade[],
+        batchId: string,
+    ): Promise<string> {
         if (!this.cantonClient) {
             this.log("Canton offline - skipping settlement execution");
             return "";
@@ -522,7 +547,11 @@ export class SettlementService {
                 const sellerPositionSide = trade.tradeType === "share_creation" ? "no" : trade.side;
 
                 const buyerPosition = await this.getPositionContract(trade.buyerId, trade.marketId, buyerPositionSide);
-                const sellerPosition = await this.getPositionContract(trade.sellerId, trade.marketId, sellerPositionSide);
+                const sellerPosition = await this.getPositionContract(
+                    trade.sellerId,
+                    trade.marketId,
+                    sellerPositionSide,
+                );
 
                 // Build ExecuteSettlement command
                 commands.push(
@@ -752,8 +781,10 @@ export class SettlementService {
                                 userId,
                                 partyId: userId,
                                 accountContractId: userContract.contractId,
-                                availableBalance: userContract.payload.availableBalance as unknown as import("decimal.js").default,
-                                lockedBalance: userContract.payload.lockedBalance as unknown as import("decimal.js").default,
+                                availableBalance: userContract.payload
+                                    .availableBalance as unknown as import("decimal.js").default,
+                                lockedBalance: userContract.payload
+                                    .lockedBalance as unknown as import("decimal.js").default,
                                 lastUpdated: new Date(),
                             },
                         };
@@ -814,7 +845,10 @@ export class SettlementService {
                 });
 
                 const userPosition = contracts.find(
-                    (c) => c.payload.owner === userId && c.payload.marketId === marketId && c.payload.side === side.toUpperCase(),
+                    (c) =>
+                        c.payload.owner === userId &&
+                        c.payload.marketId === marketId &&
+                        c.payload.side === side.toUpperCase(),
                 );
 
                 if (userPosition) {
@@ -826,7 +860,8 @@ export class SettlementService {
                             marketId,
                             side: side as "yes" | "no",
                             quantity: userPosition.payload.quantity as unknown as import("decimal.js").default,
-                            lockedQuantity: userPosition.payload.lockedQuantity as unknown as import("decimal.js").default,
+                            lockedQuantity: userPosition.payload
+                                .lockedQuantity as unknown as import("decimal.js").default,
                             avgCostBasis: userPosition.payload.avgCostBasis as unknown as import("decimal.js").default,
                             lastUpdated: new Date(),
                             isArchived: false,
@@ -899,7 +934,9 @@ export class SettlementService {
         if (existingPosition) {
             // Add to existing position with weighted average cost
             this.positionRepo.addToPosition(existingPosition.positionId, quantity, price);
-            this.log(`Updated buyer position ${existingPosition.positionId}: +${quantity} ${positionSide.toUpperCase()}`);
+            this.log(
+                `Updated buyer position ${existingPosition.positionId}: +${quantity} ${positionSide.toUpperCase()}`,
+            );
         } else {
             // Create new position
             const positionId = `pos-${buyerId.slice(0, 20)}-${marketId}-${positionSide}-${Date.now()}`;
@@ -945,7 +982,9 @@ export class SettlementService {
 
             if (existingPosition) {
                 this.positionRepo.addToPosition(existingPosition.positionId, quantity, noPrice);
-                this.log(`Updated seller position ${existingPosition.positionId}: +${quantity} ${positionSide.toUpperCase()}`);
+                this.log(
+                    `Updated seller position ${existingPosition.positionId}: +${quantity} ${positionSide.toUpperCase()}`,
+                );
             } else {
                 const positionId = `pos-${sellerId.slice(0, 20)}-${marketId}-${positionSide}-${Date.now()}`;
                 this.positionRepo.create({
@@ -959,7 +998,9 @@ export class SettlementService {
                     isArchived: false,
                     lastUpdated: new Date(),
                 });
-                this.log(`Created seller position ${positionId}: ${quantity} ${positionSide.toUpperCase()} @ ${noPrice}`);
+                this.log(
+                    `Created seller position ${positionId}: ${quantity} ${positionSide.toUpperCase()} @ ${noPrice}`,
+                );
             }
         }
     }
@@ -980,7 +1021,9 @@ export class SettlementService {
             this.settlementRepo.updateBatchStatus(batchId, "pending");
 
             const delay = Math.min(1000 * Math.pow(2, currentBatch.retryCount), 30000);
-            this.log(`Batch ${batchId} failed, retrying in ${delay}ms (attempt ${currentBatch.retryCount + 1}/${this.maxRetries})`);
+            this.log(
+                `Batch ${batchId} failed, retrying in ${delay}ms (attempt ${currentBatch.retryCount + 1}/${this.maxRetries})`,
+            );
 
             await this.sleep(delay);
 
@@ -1004,7 +1047,12 @@ export class SettlementService {
      */
     private recoverPendingBatches(): void {
         // Get incomplete batches
-        const incompleteBatches = this.settlementRepo.getBatchesByStatus(["pending", "proposing", "accepting", "executing"]);
+        const incompleteBatches = this.settlementRepo.getBatchesByStatus([
+            "pending",
+            "proposing",
+            "accepting",
+            "executing",
+        ]);
 
         if (incompleteBatches.length === 0) {
             return;
@@ -1015,14 +1063,20 @@ export class SettlementService {
         for (const batch of incompleteBatches) {
             if (batch.status === "pending") {
                 // Re-queue trades
-                const trades = batch.tradeIds.map((id) => this.tradeRepo.getById(id)).filter((t): t is Trade => t !== null);
+                const trades = batch.tradeIds
+                    .map((id) => this.tradeRepo.getById(id))
+                    .filter((t): t is Trade => t !== null);
                 this.pendingTrades.push(...trades);
                 this.log(`Re-queued ${trades.length} trades from batch ${batch.batchId}`);
             } else {
                 // For batches in intermediate states, mark as failed for manual review
                 // (proposals may have expired or be in inconsistent state)
                 this.log(`Batch ${batch.batchId} was in state '${batch.status}' - marking as failed for review`);
-                this.settlementRepo.updateBatchStatus(batch.batchId, "failed", `Incomplete batch recovered in state '${batch.status}'`);
+                this.settlementRepo.updateBatchStatus(
+                    batch.batchId,
+                    "failed",
+                    `Incomplete batch recovered in state '${batch.status}'`,
+                );
 
                 // Mark trades as failed
                 for (const tradeId of batch.tradeIds) {

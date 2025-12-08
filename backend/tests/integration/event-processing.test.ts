@@ -237,7 +237,15 @@ describe("Event Processing Integration", () => {
             await positionService.handlePositionCreated(testId("bob-pos"), bob, marketId, "yes", "100", "0", "0.40");
 
             // 4. Bob locks shares for sell order
-            await positionService.handlePositionCreated(testId("bob-pos-v2"), bob, marketId, "yes", "100", "50", "0.40");
+            await positionService.handlePositionCreated(
+                testId("bob-pos-v2"),
+                bob,
+                marketId,
+                "yes",
+                "100",
+                "50",
+                "0.40",
+            );
 
             // 5. Trade matches - Alice gets shares, Bob gets funds
             // Alice's locked funds consumed (UTXO pattern)
@@ -281,7 +289,15 @@ describe("Event Processing Integration", () => {
             await balanceService.handleAccountCreated(testId("no-acc-v3"), noBuyer, "960", "0");
 
             // Both get positions
-            await positionService.handlePositionCreated(testId("yes-pos"), yesBuyer, marketId, "yes", "100", "0", "0.60");
+            await positionService.handlePositionCreated(
+                testId("yes-pos"),
+                yesBuyer,
+                marketId,
+                "yes",
+                "100",
+                "0",
+                "0.60",
+            );
             await positionService.handlePositionCreated(testId("no-pos"), noBuyer, marketId, "no", "100", "0", "0.40");
 
             // Verify final state
@@ -353,7 +369,9 @@ describe("Event Processing Integration", () => {
 
             // Create accounts for all users
             await Promise.all(
-                users.map((user) => balanceService.handleAccountCreated(testId(`${user}-acc`), `party::${user}`, "1000", "0")),
+                users.map((user) =>
+                    balanceService.handleAccountCreated(testId(`${user}-acc`), `party::${user}`, "1000", "0"),
+                ),
             );
 
             // Create positions for all users

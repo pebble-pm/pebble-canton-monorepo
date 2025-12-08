@@ -45,7 +45,10 @@ export function initDatabase(path?: string): DatabaseConnection {
     }
 
     // Set schema version
-    db.run("INSERT OR REPLACE INTO system_state (key, value) VALUES (?, ?)", ["schema_version", String(SCHEMA_VERSION)]);
+    db.run("INSERT OR REPLACE INTO system_state (key, value) VALUES (?, ?)", [
+        "schema_version",
+        String(SCHEMA_VERSION),
+    ]);
 
     console.log(`Database initialized at ${dbPath} (schema v${SCHEMA_VERSION})`);
 
@@ -62,7 +65,9 @@ export function initDatabase(path?: string): DatabaseConnection {
  */
 export function getSchemaVersion(db: BunDatabase): number {
     try {
-        const result = db.query("SELECT value FROM system_state WHERE key = ?").get("schema_version") as { value: string } | null;
+        const result = db.query("SELECT value FROM system_state WHERE key = ?").get("schema_version") as {
+            value: string;
+        } | null;
         return result ? parseInt(result.value, 10) : 0;
     } catch {
         return 0;

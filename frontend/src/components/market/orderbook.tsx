@@ -39,7 +39,9 @@ export function Orderbook({ orderbook, side, className }: OrderbookProps) {
             </div>
 
             {/* Spread indicator */}
-            <div className="px-2 py-1 text-center text-xs text-muted-foreground border-y bg-muted/30">{getSpread(bids, asks)}</div>
+            <div className="px-2 py-1 text-center text-xs text-muted-foreground border-y bg-muted/30">
+                {getSpread(bids, asks)}
+            </div>
 
             {/* Bids (buy orders) */}
             <div className="flex flex-col">
@@ -72,7 +74,9 @@ function OrderbookRow({ level, type, maxQty }: OrderbookRowProps) {
 
             {/* Content */}
             <div className="relative grid grid-cols-3 gap-2 font-mono tabular-nums">
-                <span className={cn(type === "bid" ? "text-green-500" : "text-red-500")}>{Math.round(price * 100)}¢</span>
+                <span className={cn(type === "bid" ? "text-green-500" : "text-red-500")}>
+                    {Math.round(price * 100)}¢
+                </span>
                 <span className="text-center">{formatQuantity(quantity)}</span>
                 <span className="text-right text-muted-foreground">{level.orderCount}</span>
             </div>

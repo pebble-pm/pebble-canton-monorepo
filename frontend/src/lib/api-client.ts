@@ -90,7 +90,10 @@ export async function apiClient<T>(endpoint: string, options: RequestInit = {}):
 /**
  * GET request helper
  */
-export function apiGet<T>(endpoint: string, params?: Record<string, string | number | boolean | undefined>): Promise<T> {
+export function apiGet<T>(
+    endpoint: string,
+    params?: Record<string, string | number | boolean | undefined>,
+): Promise<T> {
     let url = endpoint;
     if (params) {
         const searchParams = new URLSearchParams();

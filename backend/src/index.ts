@@ -425,7 +425,11 @@ async function main() {
         console.log("    - Settlement service ready");
         console.log(appContext.eventProcessor ? "    - Event processor streaming" : "    - Event processor OFFLINE");
         console.log("    - Projection services ready");
-        console.log(appContext.reconciliationService ? "    - Reconciliation service running" : "    - Reconciliation service OFFLINE");
+        console.log(
+            appContext.reconciliationService
+                ? "    - Reconciliation service running"
+                : "    - Reconciliation service OFFLINE",
+        );
         console.log(`    - HTTP server listening on ${server.hostname}:${server.port}`);
         console.log(`    - WebSocket available at ws://${server.hostname}:${server.port}/api/ws`);
         console.log("");

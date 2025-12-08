@@ -221,7 +221,11 @@ describe("Crash Recovery Integration", () => {
 
             // Verify orders are in the engine
             const orderbook = newEngine.getOrderBook(marketId);
-            const totalOrders = orderbook.yes.bids.length + orderbook.yes.asks.length + orderbook.no.bids.length + orderbook.no.asks.length;
+            const totalOrders =
+                orderbook.yes.bids.length +
+                orderbook.yes.asks.length +
+                orderbook.no.bids.length +
+                orderbook.no.asks.length;
             expect(totalOrders).toBeGreaterThan(0);
         });
 
@@ -484,7 +488,14 @@ describe("Crash Recovery Integration", () => {
         INSERT INTO trades (trade_id, market_id, buy_order_id, sell_order_id, buyer_id, seller_id, quantity, price, trade_type, settlement_status, settlement_id, created_at)
         VALUES (?, ?, ?, ?, 'eve', 'frank', 75, 0.55, 'share_transfer', 'settled', ?, ?)
       `,
-                [testId("trade3"), marketId, testId("buy3"), testId("sell3"), testId("batch"), new Date().toISOString()],
+                [
+                    testId("trade3"),
+                    marketId,
+                    testId("buy3"),
+                    testId("sell3"),
+                    testId("batch"),
+                    new Date().toISOString(),
+                ],
             );
 
             const pendingTrades = db
@@ -565,9 +576,15 @@ describe("Crash Recovery Integration", () => {
             const orderbook2 = newEngine.getOrderBook(market2);
 
             const market1Orders =
-                orderbook1.yes.bids.length + orderbook1.yes.asks.length + orderbook1.no.bids.length + orderbook1.no.asks.length;
+                orderbook1.yes.bids.length +
+                orderbook1.yes.asks.length +
+                orderbook1.no.bids.length +
+                orderbook1.no.asks.length;
             const market2Orders =
-                orderbook2.yes.bids.length + orderbook2.yes.asks.length + orderbook2.no.bids.length + orderbook2.no.asks.length;
+                orderbook2.yes.bids.length +
+                orderbook2.yes.asks.length +
+                orderbook2.no.bids.length +
+                orderbook2.no.asks.length;
 
             expect(market1Orders).toBe(2);
             expect(market2Orders).toBe(1);

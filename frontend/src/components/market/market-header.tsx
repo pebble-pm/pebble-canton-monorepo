@@ -108,7 +108,10 @@ function StatusBadge({ status, outcome }: { status: "open" | "closed" | "resolve
 
     // Resolved
     return (
-        <Badge variant="outline" className={outcome ? "border-green-500 text-green-500" : "border-red-500 text-red-500"}>
+        <Badge
+            variant="outline"
+            className={outcome ? "border-green-500 text-green-500" : "border-red-500 text-red-500"}
+        >
             Resolved
         </Badge>
     );

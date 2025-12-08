@@ -51,12 +51,19 @@ export class BalanceProjectionService extends BaseProjectionService {
      * @param availableBalance - Available balance from the contract
      * @param lockedBalance - Locked balance from the contract
      */
-    async handleAccountCreated(contractId: string, owner: string, availableBalance: string, lockedBalance: string): Promise<void> {
+    async handleAccountCreated(
+        contractId: string,
+        owner: string,
+        availableBalance: string,
+        lockedBalance: string,
+    ): Promise<void> {
         const available = this.toDecimal(availableBalance);
         const locked = this.toDecimal(lockedBalance);
 
         // Check if account exists (upsert pattern using party_id as key)
-        const existing = this.db.query("SELECT user_id FROM accounts WHERE party_id = ?").get(owner) as { user_id: string } | null;
+        const existing = this.db.query("SELECT user_id FROM accounts WHERE party_id = ?").get(owner) as {
+            user_id: string;
+        } | null;
 
         if (existing) {
             // Update existing account with new contract version

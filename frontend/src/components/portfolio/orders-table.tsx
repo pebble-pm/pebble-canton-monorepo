@@ -58,7 +58,9 @@ export function OrdersTable({ status, showHistory = false }: OrdersTableProps) {
                         <ClipboardList className="mb-4 h-12 w-12 opacity-50" />
                         <p className="text-lg font-medium">{showHistory ? "No order history" : "No open orders"}</p>
                         <p className="text-sm">
-                            {showHistory ? "Your completed orders will appear here" : "Place orders on markets to see them here"}
+                            {showHistory
+                                ? "Your completed orders will appear here"
+                                : "Place orders on markets to see them here"}
                         </p>
                         {!showHistory && (
                             <Button asChild className="mt-4">
@@ -144,7 +146,11 @@ function OrderRow({ order, marketQuestion, showHistory }: OrderRowProps) {
     return (
         <TableRow>
             <TableCell>
-                <Link to="/markets/$marketId" params={{ marketId: order.marketId }} className="flex items-center gap-1 hover:underline">
+                <Link
+                    to="/markets/$marketId"
+                    params={{ marketId: order.marketId }}
+                    className="flex items-center gap-1 hover:underline"
+                >
                     <span className="max-w-[180px] truncate">{marketQuestion}</span>
                     <ExternalLink className="h-3 w-3 opacity-50" />
                 </Link>
@@ -152,7 +158,9 @@ function OrderRow({ order, marketQuestion, showHistory }: OrderRowProps) {
             <TableCell>
                 <Badge
                     variant="outline"
-                    className={order.side === "yes" ? "border-green-500/50 text-green-500" : "border-red-500/50 text-red-500"}
+                    className={
+                        order.side === "yes" ? "border-green-500/50 text-green-500" : "border-red-500/50 text-red-500"
+                    }
                 >
                     {order.side.toUpperCase()}
                 </Badge>

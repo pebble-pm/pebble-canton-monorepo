@@ -9,18 +9,31 @@ function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
     return (
         <fieldset
             data-slot="field-set"
-            className={cn("flex flex-col gap-6", "has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3", className)}
+            className={cn(
+                "flex flex-col gap-6",
+                "has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3",
+                className,
+            )}
             {...props}
         />
     );
 }
 
-function FieldLegend({ className, variant = "legend", ...props }: React.ComponentProps<"legend"> & { variant?: "legend" | "label" }) {
+function FieldLegend({
+    className,
+    variant = "legend",
+    ...props
+}: React.ComponentProps<"legend"> & { variant?: "legend" | "label" }) {
     return (
         <legend
             data-slot="field-legend"
             data-variant={variant}
-            className={cn("mb-3 font-medium", "data-[variant=legend]:text-base", "data-[variant=label]:text-sm", className)}
+            className={cn(
+                "mb-3 font-medium",
+                "data-[variant=legend]:text-base",
+                "data-[variant=label]:text-sm",
+                className,
+            )}
             {...props}
         />
     );
@@ -60,7 +73,11 @@ const fieldVariants = cva("group/field flex w-full gap-3 data-[invalid=true]:tex
     },
 });
 
-function Field({ className, orientation = "vertical", ...props }: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
+function Field({
+    className,
+    orientation = "vertical",
+    ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
     return (
         <div
             role="group"
@@ -141,7 +158,10 @@ function FieldSeparator({
         >
             <Separator className="absolute inset-0 top-1/2" />
             {children && (
-                <span className="bg-background text-muted-foreground relative mx-auto block w-fit px-2" data-slot="field-separator-content">
+                <span
+                    className="bg-background text-muted-foreground relative mx-auto block w-fit px-2"
+                    data-slot="field-separator-content"
+                >
                     {children}
                 </span>
             )}
@@ -184,10 +204,26 @@ function FieldError({
     }
 
     return (
-        <div role="alert" data-slot="field-error" className={cn("text-destructive text-sm font-normal", className)} {...props}>
+        <div
+            role="alert"
+            data-slot="field-error"
+            className={cn("text-destructive text-sm font-normal", className)}
+            {...props}
+        >
             {content}
         </div>
     );
 }
 
-export { Field, FieldLabel, FieldDescription, FieldError, FieldGroup, FieldLegend, FieldSeparator, FieldSet, FieldContent, FieldTitle };
+export {
+    Field,
+    FieldLabel,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLegend,
+    FieldSeparator,
+    FieldSet,
+    FieldContent,
+    FieldTitle,
+};

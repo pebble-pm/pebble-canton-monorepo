@@ -3,7 +3,13 @@
  */
 
 import { BaseRepository } from "./base.repository";
-import type { SettlementBatch, SettlementEvent, CompensationFailure, ReconciliationRecord, BatchStatus } from "../../types";
+import type {
+    SettlementBatch,
+    SettlementEvent,
+    CompensationFailure,
+    ReconciliationRecord,
+    BatchStatus,
+} from "../../types";
 
 // Row types
 interface BatchRow {
@@ -60,7 +66,9 @@ export class SettlementRepository extends BaseRepository {
      * Get batch by ID
      */
     getBatchById(batchId: string): SettlementBatch | null {
-        const row = this.db.query("SELECT * FROM settlement_batches WHERE batch_id = ?").get(batchId) as BatchRow | null;
+        const row = this.db
+            .query("SELECT * FROM settlement_batches WHERE batch_id = ?")
+            .get(batchId) as BatchRow | null;
 
         if (!row) return null;
 
@@ -115,7 +123,10 @@ export class SettlementRepository extends BaseRepository {
 
         // Insert trade associations
         for (const tradeId of batch.tradeIds) {
-            this.db.run(`INSERT INTO settlement_batch_trades (batch_id, trade_id) VALUES (?, ?)`, [batch.batchId, tradeId]);
+            this.db.run(`INSERT INTO settlement_batch_trades (batch_id, trade_id) VALUES (?, ?)`, [
+                batch.batchId,
+                tradeId,
+            ]);
         }
     }
 
@@ -209,7 +220,9 @@ export class SettlementRepository extends BaseRepository {
     /**
      * Create a compensation failure record
      */
-    createCompensationFailure(failure: Omit<CompensationFailure, "id" | "resolved" | "resolvedAt" | "resolvedBy">): void {
+    createCompensationFailure(
+        failure: Omit<CompensationFailure, "id" | "resolved" | "resolvedAt" | "resolvedBy">,
+    ): void {
         this.db.run(
             `INSERT INTO compensation_failures
        (order_id, user_id, amount, account_cid, error, timestamp, resolved)

@@ -90,7 +90,9 @@ account.post("/deposit", async (c) => {
     let transactionId: string = crypto.randomUUID();
 
     if (ctx.canton && ctx.config.parties.pebbleAdmin && acc.accountContractId) {
-        console.log(`[Account] Submitting CreditFromDeposit to Canton for ${userId.slice(0, 20)}... amount=${depositAmount}`);
+        console.log(
+            `[Account] Submitting CreditFromDeposit to Canton for ${userId.slice(0, 20)}... amount=${depositAmount}`,
+        );
         try {
             const result = await ctx.canton.submitCommand({
                 userId: "pebble-account-service",
@@ -98,10 +100,15 @@ account.post("/deposit", async (c) => {
                 actAs: [ctx.config.parties.pebbleAdmin],
                 readAs: [ctx.config.parties.pebbleAdmin],
                 commands: [
-                    exerciseCommand(Templates.TradingAccount, acc.accountContractId, Choices.TradingAccount.CreditFromDeposit, {
-                        amount: depositAmount.toString(),
-                        depositId: `deposit-${transactionId}`,
-                    }),
+                    exerciseCommand(
+                        Templates.TradingAccount,
+                        acc.accountContractId,
+                        Choices.TradingAccount.CreditFromDeposit,
+                        {
+                            amount: depositAmount.toString(),
+                            depositId: `deposit-${transactionId}`,
+                        },
+                    ),
                 ],
             });
             transactionId = result.transactionId || transactionId;
@@ -113,11 +120,16 @@ account.post("/deposit", async (c) => {
                     `[Account] Deposit SUCCESS: txId=${transactionId.slice(0, 20)}..., newContractId=${newContractId.slice(0, 20)}...`,
                 );
             } else {
-                console.log(`[Account] Deposit SUCCESS: txId=${transactionId.slice(0, 20)}... (no new contractId returned)`);
+                console.log(
+                    `[Account] Deposit SUCCESS: txId=${transactionId.slice(0, 20)}... (no new contractId returned)`,
+                );
             }
         } catch (error) {
             console.error("[Account] Deposit FAILED:", error instanceof Error ? error.message : error);
-            throw new ServiceUnavailableError("Failed to process deposit on ledger. Please try again.", "CANTON_DEPOSIT_FAILED");
+            throw new ServiceUnavailableError(
+                "Failed to process deposit on ledger. Please try again.",
+                "CANTON_DEPOSIT_FAILED",
+            );
         }
     } else {
         console.log(`[Account] Skipping Canton (offline mode), crediting off-chain only`);
@@ -166,7 +178,9 @@ account.post("/withdraw", async (c) => {
     let transactionId: string = crypto.randomUUID();
 
     if (ctx.canton && ctx.config.parties.pebbleAdmin && acc.accountContractId) {
-        console.log(`[Account] Submitting WithdrawFunds to Canton for ${userId.slice(0, 20)}... amount=${withdrawAmount}`);
+        console.log(
+            `[Account] Submitting WithdrawFunds to Canton for ${userId.slice(0, 20)}... amount=${withdrawAmount}`,
+        );
         try {
             // WithdrawFunds choice has controller = owner, so we must actAs the user's party
             const result = await ctx.canton.submitCommand({
@@ -175,9 +189,14 @@ account.post("/withdraw", async (c) => {
                 actAs: [acc.partyId], // Use owner party, not pebbleAdmin
                 readAs: [acc.partyId, ctx.config.parties.pebbleAdmin],
                 commands: [
-                    exerciseCommand(Templates.TradingAccount, acc.accountContractId, Choices.TradingAccount.WithdrawFunds, {
-                        amount: withdrawAmount.toString(),
-                    }),
+                    exerciseCommand(
+                        Templates.TradingAccount,
+                        acc.accountContractId,
+                        Choices.TradingAccount.WithdrawFunds,
+                        {
+                            amount: withdrawAmount.toString(),
+                        },
+                    ),
                 ],
             });
             transactionId = result.transactionId || transactionId;
@@ -189,11 +208,16 @@ account.post("/withdraw", async (c) => {
                     `[Account] Withdraw SUCCESS: txId=${transactionId.slice(0, 20)}..., newContractId=${newContractId.slice(0, 20)}...`,
                 );
             } else {
-                console.log(`[Account] Withdraw SUCCESS: txId=${transactionId.slice(0, 20)}... (no new contractId returned)`);
+                console.log(
+                    `[Account] Withdraw SUCCESS: txId=${transactionId.slice(0, 20)}... (no new contractId returned)`,
+                );
             }
         } catch (error) {
             console.error("[Account] Withdraw FAILED:", error instanceof Error ? error.message : error);
-            throw new ServiceUnavailableError("Failed to process withdrawal on ledger. Please try again.", "CANTON_WITHDRAW_FAILED");
+            throw new ServiceUnavailableError(
+                "Failed to process withdrawal on ledger. Please try again.",
+                "CANTON_WITHDRAW_FAILED",
+            );
         }
     } else {
         console.log(`[Account] Skipping Canton (offline mode), debiting off-chain only`);

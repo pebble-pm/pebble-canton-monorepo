@@ -94,7 +94,13 @@ class InMemorySettlementRepo {
         }
     }
 
-    createEvent(event: { contractId: string; settlementId: string; transactionId?: string; status: string; timestamp: Date }): void {
+    createEvent(event: {
+        contractId: string;
+        settlementId: string;
+        transactionId?: string;
+        status: string;
+        timestamp: Date;
+    }): void {
         this.events.push({
             ...event,
             transactionId: event.transactionId ?? "",
@@ -184,7 +190,13 @@ class InMemoryPositionRepo {
         return this.positions.get(this.key(userId, marketId, side)) ?? null;
     }
 
-    upsertPosition(userId: string, marketId: string, side: "yes" | "no", quantity: Decimal, _avgCostBasis: Decimal): void {
+    upsertPosition(
+        userId: string,
+        marketId: string,
+        side: "yes" | "no",
+        quantity: Decimal,
+        _avgCostBasis: Decimal,
+    ): void {
         const existing = this.getByUserMarketSide(userId, marketId, side);
         if (existing) {
             existing.quantity = existing.quantity.plus(quantity);
@@ -231,7 +243,12 @@ class InMemoryPositionRepo {
         }
     }
 
-    set(userId: string, marketId: string, side: "yes" | "no", position: ReturnType<typeof createPositionProjection>): void {
+    set(
+        userId: string,
+        marketId: string,
+        side: "yes" | "no",
+        position: ReturnType<typeof createPositionProjection>,
+    ): void {
         this.positions.set(this.key(userId, marketId, side), position);
     }
 

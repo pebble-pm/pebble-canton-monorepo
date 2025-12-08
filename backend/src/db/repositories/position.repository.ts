@@ -23,7 +23,9 @@ export class PositionRepository extends BaseRepository {
      * Get position by ID
      */
     getById(positionId: string): Position | null {
-        const row = this.db.query("SELECT * FROM positions WHERE position_id = ?").get(positionId) as PositionRow | null;
+        const row = this.db
+            .query("SELECT * FROM positions WHERE position_id = ?")
+            .get(positionId) as PositionRow | null;
 
         return row ? this.rowToPosition(row) : null;
     }

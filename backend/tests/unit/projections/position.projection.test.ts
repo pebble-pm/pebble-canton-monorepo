@@ -252,8 +252,24 @@ describe("PositionProjectionService", () => {
         it("should return all positions in a market", async () => {
             const marketId = testId("market");
 
-            await positionService.handlePositionCreated(testId("p1"), "party::user1", marketId, "yes", "100", "0", "0.50");
-            await positionService.handlePositionCreated(testId("p2"), "party::user2", marketId, "no", "50", "0", "0.50");
+            await positionService.handlePositionCreated(
+                testId("p1"),
+                "party::user1",
+                marketId,
+                "yes",
+                "100",
+                "0",
+                "0.50",
+            );
+            await positionService.handlePositionCreated(
+                testId("p2"),
+                "party::user2",
+                marketId,
+                "no",
+                "50",
+                "0",
+                "0.50",
+            );
 
             const positions = positionService.getByMarket(marketId);
             expect(positions.length).toBe(2);
@@ -262,10 +278,26 @@ describe("PositionProjectionService", () => {
         it("should include archived positions in market query", async () => {
             const marketId = testId("market");
 
-            await positionService.handlePositionCreated(testId("p1"), "party::user1", marketId, "yes", "0", "0", "0.50");
+            await positionService.handlePositionCreated(
+                testId("p1"),
+                "party::user1",
+                marketId,
+                "yes",
+                "0",
+                "0",
+                "0.50",
+            );
             await positionService.handlePositionArchived(testId("p1"));
 
-            await positionService.handlePositionCreated(testId("p2"), "party::user2", marketId, "no", "50", "0", "0.50");
+            await positionService.handlePositionCreated(
+                testId("p2"),
+                "party::user2",
+                marketId,
+                "no",
+                "50",
+                "0",
+                "0.50",
+            );
 
             const positions = positionService.getByMarket(marketId);
             expect(positions.length).toBe(2);
@@ -340,7 +372,15 @@ describe("PositionProjectionService", () => {
 
             // Simulate rapid trading causing multiple contract updates
             for (let i = 0; i < 10; i++) {
-                await positionService.handlePositionCreated(testId(`pos-v${i}`), owner, marketId, "yes", String(100 - i * 5), "0", "0.50");
+                await positionService.handlePositionCreated(
+                    testId(`pos-v${i}`),
+                    owner,
+                    marketId,
+                    "yes",
+                    String(100 - i * 5),
+                    "0",
+                    "0.50",
+                );
             }
 
             const positions = positionService.getByUser(owner);
@@ -353,7 +393,15 @@ describe("PositionProjectionService", () => {
             const owner = "party::fractional";
             const marketId = testId("market");
 
-            await positionService.handlePositionCreated(contractId, owner, marketId, "yes", "123.456", "12.345", "0.567");
+            await positionService.handlePositionCreated(
+                contractId,
+                owner,
+                marketId,
+                "yes",
+                "123.456",
+                "12.345",
+                "0.567",
+            );
 
             const position = positionService.getByContractId(contractId);
             expect(position!.quantity.toNumber()).toBeCloseTo(123.456, 2);

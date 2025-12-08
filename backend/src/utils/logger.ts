@@ -92,7 +92,12 @@ export function logLedgerSuccess(
  * logLedgerError("CREATE", "TradingAccount", new Error("Connection refused"), { party: "Alice" })
  * // [14:32:05.789] [LEDGER:CREATE] TradingAccount | party=Alice | ERROR: Connection refused
  */
-export function logLedgerError(action: LedgerAction, template: string, error: unknown, context?: LedgerLogContext): void {
+export function logLedgerError(
+    action: LedgerAction,
+    template: string,
+    error: unknown,
+    context?: LedgerLogContext,
+): void {
     const timestamp = getTimestamp();
     const contextStr = formatContext(context);
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -106,10 +111,17 @@ export function logLedgerError(action: LedgerAction, template: string, error: un
  * logLedgerEvent("created", "TradingAccount", "contractId123", { party: "Alice" })
  * // [14:32:06.123] [LEDGER:EVENT] TradingAccount | party=Alice | created contractId=contractId123
  */
-export function logLedgerEvent(eventType: "created" | "archived", template: string, contractId: string, context?: LedgerLogContext): void {
+export function logLedgerEvent(
+    eventType: "created" | "archived",
+    template: string,
+    contractId: string,
+    context?: LedgerLogContext,
+): void {
     const timestamp = getTimestamp();
     const contextStr = formatContext(context);
-    console.log(`[${timestamp}] [LEDGER:EVENT] ${template} | ${contextStr} | ${eventType} contractId=${truncate(contractId)}`);
+    console.log(
+        `[${timestamp}] [LEDGER:EVENT] ${template} | ${contextStr} | ${eventType} contractId=${truncate(contractId)}`,
+    );
 }
 
 /**
@@ -141,7 +153,11 @@ function formatContext(context?: LedgerLogContext): string {
  * logApp("OrderService", "Order placed", { orderId: "123", userId: "Alice" })
  * // [14:32:07.456] [OrderService] Order placed | orderId=123 userId=Alice
  */
-export function logApp(component: string, message: string, context?: Record<string, string | number | boolean | undefined>): void {
+export function logApp(
+    component: string,
+    message: string,
+    context?: Record<string, string | number | boolean | undefined>,
+): void {
     const timestamp = getTimestamp();
     if (context) {
         const contextStr = Object.entries(context)
@@ -171,7 +187,9 @@ export function logAppError(
             .filter(([_, v]) => v !== undefined)
             .map(([k, v]) => `${k}=${v}`)
             .join(" ");
-        console.error(`[${timestamp}] [${component}] ERROR: ${message} | ${contextStr}${errorMsg ? ` | ${errorMsg}` : ""}`);
+        console.error(
+            `[${timestamp}] [${component}] ERROR: ${message} | ${contextStr}${errorMsg ? ` | ${errorMsg}` : ""}`,
+        );
     } else {
         console.error(`[${timestamp}] [${component}] ERROR: ${message}${errorMsg ? ` | ${errorMsg}` : ""}`);
     }
@@ -180,7 +198,11 @@ export function logAppError(
 /**
  * Log a warning with timestamp
  */
-export function logAppWarn(component: string, message: string, context?: Record<string, string | number | boolean | undefined>): void {
+export function logAppWarn(
+    component: string,
+    message: string,
+    context?: Record<string, string | number | boolean | undefined>,
+): void {
     const timestamp = getTimestamp();
     if (context) {
         const contextStr = Object.entries(context)
@@ -204,7 +226,11 @@ export function logAppWarn(component: string, message: string, context?: Record<
  * logWsBroadcast("trades:market-123", "trade:executed", { tradeId: "t1" })
  * // [14:32:08.123] [WS:BROADCAST] trades:market-123 | trade:executed | tradeId=t1
  */
-export function logWsBroadcast(channel: string, event: string, context?: Record<string, string | number | boolean | undefined>): void {
+export function logWsBroadcast(
+    channel: string,
+    event: string,
+    context?: Record<string, string | number | boolean | undefined>,
+): void {
     const timestamp = getTimestamp();
     if (context) {
         const contextStr = Object.entries(context)

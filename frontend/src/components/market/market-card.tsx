@@ -30,7 +30,9 @@ export function MarketCard({ market }: MarketCardProps) {
                         <CardTitle className="text-lg leading-tight">{market.question}</CardTitle>
                         <StatusBadge status={market.status} outcome={market.outcome} />
                     </div>
-                    {market.description && <CardDescription className="line-clamp-2">{market.description}</CardDescription>}
+                    {market.description && (
+                        <CardDescription className="line-clamp-2">{market.description}</CardDescription>
+                    )}
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-wrap items-center justify-between gap-4">
@@ -39,7 +41,11 @@ export function MarketCard({ market }: MarketCardProps) {
                             {isResolved ? (
                                 <div className="text-sm">
                                     <span className="text-muted-foreground">Resolved: </span>
-                                    <span className={market.outcome ? "text-green-500 font-medium" : "text-red-500 font-medium"}>
+                                    <span
+                                        className={
+                                            market.outcome ? "text-green-500 font-medium" : "text-red-500 font-medium"
+                                        }
+                                    >
                                         {market.outcome ? "YES" : "NO"}
                                     </span>
                                 </div>
@@ -87,7 +93,10 @@ function StatusBadge({ status, outcome }: { status: MarketResponse["status"]; ou
 
     // Resolved
     return (
-        <Badge variant="outline" className={outcome ? "border-green-500 text-green-500" : "border-red-500 text-red-500"}>
+        <Badge
+            variant="outline"
+            className={outcome ? "border-green-500 text-green-500" : "border-red-500 text-red-500"}
+        >
             {outcome ? "YES" : "NO"}
         </Badge>
     );

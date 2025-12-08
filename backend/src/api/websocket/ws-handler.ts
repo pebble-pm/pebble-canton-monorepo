@@ -205,7 +205,12 @@ function handleAuth(ws: ServerWebSocket<WsData>, connectionId: string, token?: s
 /**
  * Handle subscribe message
  */
-function handleSubscribe(ws: ServerWebSocket<WsData>, connectionId: string, channel?: string, channels?: string[]): void {
+function handleSubscribe(
+    ws: ServerWebSocket<WsData>,
+    connectionId: string,
+    channel?: string,
+    channels?: string[],
+): void {
     const channelsToSubscribe = channels || (channel ? [channel] : []);
 
     if (channelsToSubscribe.length === 0) {

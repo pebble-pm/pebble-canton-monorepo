@@ -4,7 +4,16 @@
  * Converts Decimal.js values to strings for JSON serialization
  */
 
-import type { Market, Order, Position, TradingAccount, Trade, OrderBook, OrderBookLevel, TradePublic } from "../../types";
+import type {
+    Market,
+    Order,
+    Position,
+    TradingAccount,
+    Trade,
+    OrderBook,
+    OrderBookLevel,
+    TradePublic,
+} from "../../types";
 import type {
     MarketResponse,
     OrderResponse,

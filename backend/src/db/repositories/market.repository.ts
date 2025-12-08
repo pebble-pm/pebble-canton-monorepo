@@ -29,7 +29,9 @@ export class MarketRepository extends BaseRepository {
      * Get all active markets (not resolved)
      */
     getActiveMarkets(): Market[] {
-        const rows = this.db.query("SELECT * FROM markets WHERE status != 'resolved' ORDER BY created_at DESC").all() as MarketRow[];
+        const rows = this.db
+            .query("SELECT * FROM markets WHERE status != 'resolved' ORDER BY created_at DESC")
+            .all() as MarketRow[];
 
         return rows.map((row) => this.rowToMarket(row));
     }
@@ -47,7 +49,9 @@ export class MarketRepository extends BaseRepository {
      * Get markets by status
      */
     getByStatus(status: Market["status"]): Market[] {
-        const rows = this.db.query("SELECT * FROM markets WHERE status = ? ORDER BY created_at DESC").all(status) as MarketRow[];
+        const rows = this.db
+            .query("SELECT * FROM markets WHERE status = ? ORDER BY created_at DESC")
+            .all(status) as MarketRow[];
 
         return rows.map((row) => this.rowToMarket(row));
     }
@@ -158,7 +162,11 @@ export class MarketRepository extends BaseRepository {
                 marketId,
             ]);
         } else {
-            this.db.run("UPDATE markets SET status = ?, last_updated = ? WHERE market_id = ?", [status, this.now(), marketId]);
+            this.db.run("UPDATE markets SET status = ?, last_updated = ? WHERE market_id = ?", [
+                status,
+                this.now(),
+                marketId,
+            ]);
         }
     }
 

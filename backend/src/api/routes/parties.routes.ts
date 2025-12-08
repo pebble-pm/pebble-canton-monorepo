@@ -85,7 +85,10 @@ parties.post("/allocate", async (c) => {
         .replace(/[^a-zA-Z0-9_]/g, "")
         .slice(0, 50);
     if (sanitizedName.length === 0) {
-        throw new BadRequestError("displayName must contain at least one alphanumeric character", "INVALID_DISPLAY_NAME");
+        throw new BadRequestError(
+            "displayName must contain at least one alphanumeric character",
+            "INVALID_DISPLAY_NAME",
+        );
     }
 
     // Generate a unique party hint using display name + timestamp

@@ -127,7 +127,12 @@ describe("ReconciliationService", () => {
         onChainBalances = new Map();
         cantonClient = createMockCantonClient(onChainBalances);
 
-        reconciliationService = new ReconciliationService(cantonClient as never, db as never, balanceProjection as never, config);
+        reconciliationService = new ReconciliationService(
+            cantonClient as never,
+            db as never,
+            balanceProjection as never,
+            config,
+        );
     });
 
     afterEach(() => {
@@ -283,7 +288,12 @@ describe("ReconciliationService", () => {
 
     describe("without Canton client", () => {
         it("should not start without Canton client", () => {
-            const serviceWithoutCanton = new ReconciliationService(null, db as never, balanceProjection as never, config);
+            const serviceWithoutCanton = new ReconciliationService(
+                null,
+                db as never,
+                balanceProjection as never,
+                config,
+            );
 
             serviceWithoutCanton.start();
 
@@ -292,7 +302,12 @@ describe("ReconciliationService", () => {
         });
 
         it("should return false for reconcileAccount without Canton", async () => {
-            const serviceWithoutCanton = new ReconciliationService(null, db as never, balanceProjection as never, config);
+            const serviceWithoutCanton = new ReconciliationService(
+                null,
+                db as never,
+                balanceProjection as never,
+                config,
+            );
 
             balanceProjection._set("Alice", 1000, 0);
 

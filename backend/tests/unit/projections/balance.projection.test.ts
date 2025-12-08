@@ -251,7 +251,12 @@ describe("BalanceProjectionService", () => {
 
             // Rapid succession of updates
             for (let i = 0; i < 10; i++) {
-                await balanceService.handleAccountCreated(`${contractIdBase}-${i}`, owner, String(1000 - i * 10), String(i * 10));
+                await balanceService.handleAccountCreated(
+                    `${contractIdBase}-${i}`,
+                    owner,
+                    String(1000 - i * 10),
+                    String(i * 10),
+                );
             }
 
             const account = balanceService.getByPartyId(owner);

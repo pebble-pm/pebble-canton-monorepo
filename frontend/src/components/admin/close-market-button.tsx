@@ -51,8 +51,8 @@ export function CloseMarketButton({ marketId }: CloseMarketButtonProps) {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Close Market?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This will stop all trading on this market. Users will no longer be able to place orders. This action cannot be
-                        undone.
+                        This will stop all trading on this market. Users will no longer be able to place orders. This
+                        action cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

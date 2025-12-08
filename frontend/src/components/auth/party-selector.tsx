@@ -117,7 +117,11 @@ export function PartySelector({ onSuccess }: PartySelectorProps) {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Select Party</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                value={field.value}
+                                                disabled={isLoading}
+                                            >
                                                 <FormControl>
                                                     <SelectTrigger>
                                                         <SelectValue placeholder="Choose a party..." />
@@ -127,7 +131,9 @@ export function PartySelector({ onSuccess }: PartySelectorProps) {
                                                     {parties?.map((party) => (
                                                         <SelectItem key={party.id} value={party.id}>
                                                             <span className="flex items-center gap-2">
-                                                                {party.isSystem && <Shield className="h-3 w-3 text-amber-500" />}
+                                                                {party.isSystem && (
+                                                                    <Shield className="h-3 w-3 text-amber-500" />
+                                                                )}
                                                                 {party.displayName}
                                                             </span>
                                                         </SelectItem>
@@ -145,7 +151,10 @@ export function PartySelector({ onSuccess }: PartySelectorProps) {
                                         checked={showSystemParties}
                                         onCheckedChange={(checked) => setShowSystemParties(checked === true)}
                                     />
-                                    <label htmlFor="showSystem" className="text-sm text-muted-foreground cursor-pointer">
+                                    <label
+                                        htmlFor="showSystem"
+                                        className="text-sm text-muted-foreground cursor-pointer"
+                                    >
                                         Show system parties (Admin, Oracle)
                                     </label>
                                 </div>
@@ -168,9 +177,15 @@ export function PartySelector({ onSuccess }: PartySelectorProps) {
                                         <FormItem>
                                             <FormLabel>Display Name</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Enter your name..." {...field} disabled={isLoading} />
+                                                <Input
+                                                    placeholder="Enter your name..."
+                                                    {...field}
+                                                    disabled={isLoading}
+                                                />
                                             </FormControl>
-                                            <FormDescription>This will be your identity on the Canton ledger</FormDescription>
+                                            <FormDescription>
+                                                This will be your identity on the Canton ledger
+                                            </FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )}

@@ -163,7 +163,10 @@ markets.post("/", adminAuth, async (c) => {
             market.contractId = result.contractId;
         } catch (error) {
             console.error("[Markets] Failed to create market on Canton:", error);
-            throw new ServiceUnavailableError("Failed to create market on ledger. Please try again.", "CANTON_CREATE_FAILED");
+            throw new ServiceUnavailableError(
+                "Failed to create market on ledger. Please try again.",
+                "CANTON_CREATE_FAILED",
+            );
         }
     }
 
@@ -227,7 +230,9 @@ markets.post("/:marketId/resolve", adminAuth, async (c) => {
                 commandId: generateCommandId(`resolve-market-${marketId}`),
                 actAs: [ctx.config.parties.oracle],
                 readAs: [ctx.config.parties.pebbleAdmin, ctx.config.parties.oracle],
-                commands: [exerciseCommand(Templates.Market, market.contractId, Choices.Market.ResolveMarket, { outcome })],
+                commands: [
+                    exerciseCommand(Templates.Market, market.contractId, Choices.Market.ResolveMarket, { outcome }),
+                ],
             });
         } catch (error) {
             console.error("[Markets] Failed to resolve market on Canton:", error);
@@ -269,7 +274,10 @@ markets.post("/:marketId/close", adminAuth, async (c) => {
             });
         } catch (error) {
             console.error("[Markets] Failed to close market on Canton:", error);
-            throw new ServiceUnavailableError("Failed to close market on ledger. Please try again.", "CANTON_CLOSE_FAILED");
+            throw new ServiceUnavailableError(
+                "Failed to close market on ledger. Please try again.",
+                "CANTON_CLOSE_FAILED",
+            );
         }
     }
 

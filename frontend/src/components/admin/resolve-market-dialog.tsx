@@ -7,7 +7,15 @@
 import { useState } from "react";
 import { CheckCircle, XCircle, Loader2, Gavel } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useResolveMarket } from "@/api/admin";
 
@@ -55,7 +63,8 @@ export function ResolveMarketDialog({ marketId, question }: ResolveMarketDialogP
                 <DialogHeader>
                     <DialogTitle>Resolve Market</DialogTitle>
                     <DialogDescription>
-                        Select the final outcome for this market. This action is permanent and will allow winning positions to be redeemed.
+                        Select the final outcome for this market. This action is permanent and will allow winning
+                        positions to be redeemed.
                     </DialogDescription>
                 </DialogHeader>
 

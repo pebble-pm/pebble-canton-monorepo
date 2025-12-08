@@ -9,7 +9,10 @@ function Command({ className, ...props }: React.ComponentProps<typeof CommandPri
     return (
         <CommandPrimitive
             data-slot="command"
-            className={cn("bg-popover text-popover-foreground flex h-full w-full flex-col overflow-hidden rounded-md", className)}
+            className={cn(
+                "bg-popover text-popover-foreground flex h-full w-full flex-col overflow-hidden rounded-md",
+                className,
+            )}
             {...props}
         />
     );
@@ -87,7 +90,13 @@ function CommandGroup({ className, ...props }: React.ComponentProps<typeof Comma
 }
 
 function CommandSeparator({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Separator>) {
-    return <CommandPrimitive.Separator data-slot="command-separator" className={cn("bg-border -mx-1 h-px", className)} {...props} />;
+    return (
+        <CommandPrimitive.Separator
+            data-slot="command-separator"
+            className={cn("bg-border -mx-1 h-px", className)}
+            {...props}
+        />
+    );
 }
 
 function CommandItem({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Item>) {
@@ -105,8 +114,22 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
 
 function CommandShortcut({ className, ...props }: React.ComponentProps<"span">) {
     return (
-        <span data-slot="command-shortcut" className={cn("text-muted-foreground ml-auto text-xs tracking-widest", className)} {...props} />
+        <span
+            data-slot="command-shortcut"
+            className={cn("text-muted-foreground ml-auto text-xs tracking-widest", className)}
+            {...props}
+        />
     );
 }
 
-export { Command, CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandShortcut, CommandSeparator };
+export {
+    Command,
+    CommandDialog,
+    CommandInput,
+    CommandList,
+    CommandEmpty,
+    CommandGroup,
+    CommandItem,
+    CommandShortcut,
+    CommandSeparator,
+};
