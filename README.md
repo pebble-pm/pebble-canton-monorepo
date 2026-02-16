@@ -1,3 +1,9 @@
+# NOTE: This MVP version of Pebble is deprecated. Source is currently available only for reference. 
+
+# Private Alpha available upon request.
+
+---
+
 # Pebble Canton Prediction Market
 
 **A decentralized prediction market platform built on Canton blockchain**
